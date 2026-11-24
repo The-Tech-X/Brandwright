@@ -1,0 +1,149 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { PauseCircle } from "lucide-react";
+import { apiFetch } from "@/lib/api-client";
+import { cn } from "@/lib/utils";
+import { automationSchema, type Automation, type AutomationView } from "@/core/settings";
+import { Alert } from "@/components/kit/Alert";
+import { Card } from "@/components/kit/Card";
+import { Field } from "@/components/kit/Field";
+import { NumberInput, TextInput } from "@/components/kit/inputs";
+import { Select } from "@/components/kit/Select";
+import { TimePicker } from "@/components/kit/TimePicker";
+import { ChoiceCards } from "@/components/kit/choices";
+import { Counter, Switch } from "@/components/kit/controls";
+import { PlatformIcon } from "@/components/kit/PlatformIcon";
+import { POSTING_PLATFORMS } from "@/core/onboarding/options";
+import { SaveBar } from "@/components/kit/SaveBar";
+import { Skeleton } from "@/components/kit/Skeleton";
+import { row } from "@/components/kit/styles";
+import { AUTOPILOT_OPTIONS, POSTING_LABELS, WEEKDAY_OPTIONS } from "@/modules/onboarding/config";
+
+const KEY = ["settings", "automation"];
+
+const fromView = (v: AutomationView): Automation => ({
+  autopilot_mode: v.autopilot_mode,
+  paused: v.paused,
+  auto_plan: v.auto_plan,
+  plan_weekday: v.plan_weekday,
+  plan_time: v.plan_time,
+  approval_timeout_hours: v.approval_timeout_hours,
+  notify_email: v.notify_email,
+  posts_per_week: v.posts_per_week,
+});
+
+/** How much the agents do on their own, when they plan, and where the emails go. */
+export function AutomationForm() {
+  const queryClient = useQueryClient();
+  const { data, isLoading, error } = useQuery({ queryKey: KEY, queryFn: () => apiFetch<AutomationView>("/api/settings/automation") });
+  const save = useMutation({
+    mutationFn: (input: Automation) => apiFetch<AutomationView>("/api/settings/automation", { method: "PUT", body: JSON.stringify(input) }),
+    onSuccess: (view) => queryClient.setQueryData(KEY, view),
+  });
+  const [form, setForm] = useState<Automation | null>(null);
+  const [problem, setProblem] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (data) setForm(fromView(data));
+  }, [data]);
+
+  if (error) return <Alert tone="error">{error.message}</Alert>;
+  if (isLoading || !data || !form) {
+    return (
+      <div className="flex flex-col gap-5">
+        <Skeleton className="h-28" />
+        <Skeleton className="h-64" />
+      </div>
+    );
+  }
+
+  const saved = fromView(data);
+  const set = (patch: Partial<Automation>) => setForm({ ...form, ...patch });
+  const dirty = JSON.stringify(form) !== JSON.stringify(saved);
+
+  function submit() {
+    const parsed = automationSchema.safeParse(form);
+    if (!parsed.success) return setProblem(parsed.error.issues[0].message);
+    setProblem(null);
+    save.mutate(parsed.data);
+  }
+
+  return (
+    <div className="flex flex-col gap-5">
+      <Card className={cn(form.paused && "border-ob-warn bg-ob-warn-soft")}>
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-start gap-3">
+            <span className={cn("grid size-10 shrink-0 place-items-center rounded-full", form.paused ? "bg-ob-warn text-ob-on-primary" : "bg-ob-sunken text-ob-muted")}>
+              <PauseCircle size={20} />
+            </span>
+            <div className="flex flex-col gap-0.5">
+              <strong className="text-base">{form.paused ? "All agents are paused" : "Agents are running"}</strong>
+              <span className="text-sm text-ob-muted">Pausing stops planning, creating and posting until you turn it back on.</span>
+            </div>
+          </div>
+          <Switch checked={form.paused} onChange={(paused) => set({ paused })} label="Pause all agents" />
+        </div>
+      </Card>
+
+      <Card title="Autopilot" description="How much the agents do before asking you.">
+        <ChoiceCards label="Autopilot" options={AUTOPILOT_OPTIONS} value={form.autopilot_mode} onChange={(autopilot_mode) => set({ autopilot_mode })} />
+        {form.autopilot_mode === "full" && (
+          <Field className="mt-5 max-w-[280px]" label="Auto-approve after (hours)" htmlFor="timeout" hint="Posts go out if you don't respond in time.">
+            <NumberInput id="timeout" min={1} max={168} value={form.approval_timeout_hours} onValueChange={(v) => set({ approval_timeout_hours: v ?? 24 })} />
+          </Field>
+        )}
+      </Card>
+
+      <Card title="Weekly plan" description="The Planner can plan and make next week's posts by itself, every week. Off, you plan from This week (Auto-create or Create an ad).">
+        <Switch checked={form.auto_plan} onChange={(auto_plan) => set({ auto_plan })} label="Plan my week automatically" />
+        {form.auto_plan && (
+          <div className={cn(row, "mt-5")}>
+            <Field label="Day" htmlFor="plan-day">
+              <Select id="plan-day" options={WEEKDAY_OPTIONS} value={String(form.plan_weekday)} onValueChange={(v) => set({ plan_weekday: Number(v) })} />
+            </Field>
+            <Field label="Time" htmlFor="plan-time">
+              <TimePicker id="plan-time" value={form.plan_time} onChange={(plan_time) => set({ plan_time })} />
+            </Field>
+          </div>
+        )}
+      </Card>
+
+      <Card title="Posts per week" description={`The Planner makes this many slots each week (${Object.values(form.posts_per_week).reduce((a, b) => a + b, 0)} in total).`}>
+        <div className="grid grid-cols-1 gap-x-8 md:grid-cols-2">
+          {POSTING_PLATFORMS.map((platform) => (
+            <div key={platform} className="flex items-center justify-between gap-3 border-b border-ob-line py-3">
+              <span className="flex items-center gap-2.5 font-semibold">
+                <PlatformIcon platform={platform} />
+                {POSTING_LABELS[platform]}
+              </span>
+              <Counter
+                label={`${POSTING_LABELS[platform]} posts`}
+                value={form.posts_per_week[platform] ?? 0}
+                onChange={(n) => set({ posts_per_week: { ...form.posts_per_week, [platform]: n } })}
+              />
+            </div>
+          ))}
+        </div>
+      </Card>
+
+      <Card title="Notifications" description="Where we send plan-ready, approval and failure emails.">
+        <Field label="Email" htmlFor="notify" optional className="max-w-[420px]">
+          <TextInput id="notify" type="email" value={form.notify_email ?? ""} placeholder="you@business.com" onValueChange={(v) => set({ notify_email: v })} />
+        </Field>
+      </Card>
+
+      <SaveBar
+        show={dirty}
+        saving={save.isPending}
+        error={problem ?? save.error?.message}
+        onSave={submit}
+        onDiscard={() => {
+          setForm(saved);
+          setProblem(null);
+        }}
+      />
+    </div>
+  );
+}

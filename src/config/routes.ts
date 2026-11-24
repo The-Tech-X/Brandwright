@@ -1,0 +1,15 @@
+export const ROUTES = {
+  home: "/week",
+  week: "/week",
+  media: "/media",
+  posts: "/posts",
+  postsNew: "/posts/new",
+  postDetail: (id: string) => `/posts/${id}`,
+  calendar: "/calendar",
+  brand: "/brand",
+  brandTab: (tab: string) => `/brand?tab=${tab}`,
+  settings: "/settings",
+  performance: "/performance",
+  activity: "/activity",
+  credits: "/credits",
+} as const;

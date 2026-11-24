@@ -1,0 +1,28 @@
+# Hostinger VPS: `docker compose up -d --build` in this folder.
+# Caddy gives the worker HTTPS on WORKER_DOMAIN automatically.
+services:
+  worker:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    expose:
+      - "8080"
+    # The headless browser needs more shared memory than Docker's default 64 MB
+    shm_size: "1gb"
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      WORKER_DOMAIN: ${WORKER_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+    depends_on:
+      - worker
+
+volumes:
+  caddy_data:

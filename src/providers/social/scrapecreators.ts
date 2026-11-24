@@ -1,0 +1,421 @@
+import { env } from "@/config/env";
+import { PRICING } from "@/config/pricing";
+import { AppError, notConfigured } from "@/core/errors";
+import { cleanReason } from "@/core/error-text";
+import { replyError, request, type KnownErrors } from "@/providers/http";
+import type { Result, Usage } from "@/providers/usage";
+import type { AdCreative, AdvertiserMatch, LibraryAd, LibraryPage, ReadablePlatform, SocialPost, SocialProfile, WebResult } from "./types";
+
+// Public social profiles, posts, ad libraries and Google search. 1 credit per call for the
+// endpoints used here; the response says what it charged.
+
+const SERVICE = "ScrapeCreators";
+const API_BASE = "https://api.scrapecreators.com";
+
+function usage(credits: number): Usage {
+  return {
+    provider: "scrapecreators",
+    costUsd: credits * PRICING.scrapecreators.perCredit,
+  };
+}
+
+/** "instagram profile, royalgypsy3": the endpoint in words and what it was asked for, for error messages */
+function describe(path: string, params: Record<string, string | undefined>): string {
+  const words = path
+    .split("/")
+    .filter((p) => p && !/^v\d+$/.test(p))
+    .join(" ")
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .toLowerCase();
+  const subject = params.handle ?? params.query ?? params.url ?? params.pageId ?? params.domain;
+  return subject ? `${words}, ${cleanReason(subject, 80)}` : words;
+}
+
+/** GET with the key. Returns null for "not found" so a missing profile isn't an error. */
+async function get(path: string, params: Record<string, string | undefined>): Promise<{ body: any | null; usage: Usage }> {
+  if (!env.SCRAPECREATORS_API_KEY) throw notConfigured(SERVICE, "SCRAPECREATORS_API_KEY is empty on the server");
+  const qs = new URLSearchParams(Object.entries(params).filter((e): e is [string, string] => !!e[1]));
+  const what = describe(path, params);
+  const res = await request(SERVICE, `${API_BASE}${path}?${qs}`, {
+    headers: { "x-api-key": env.SCRAPECREATORS_API_KEY },
+  });
+  const text = await res.text().catch(() => "");
+  let body: any = {};
+  try {
+    body = text ? JSON.parse(text) : {};
+  } catch {
+    if (res.ok) throw new AppError(`${SERVICE} (${what}) sent a reply that isn't JSON: "${cleanReason(text, 120)}".`, "PROVIDER_DOWN", true);
+  }
+  // Not found, including the older endpoints' 200 placeholders (error "not_found", errorStatus 404)
+  if (res.status === 404 || body?.error === "not_found" || body?.errorStatus === 404) {
+    return { body: null, usage: usage(Number(body?.credits_charged ?? 0)) };
+  }
+  if (!res.ok || body?.success === false) {
+    // Its error is a short code ("forbidden") with the sentence in `message`
+    const parts = { message: body?.message, code: typeof body?.error === "string" ? body.error : undefined };
+    throw replyError(SERVICE, res, parts, text, what, KNOWN, BY_MESSAGE);
+  }
+  return { body, usage: usage(Number(body?.credits_charged ?? 1)) };
+}
+
+// What its docs say its failures mean (docs.scrapecreators.com/introduction); only some carry a code
+const KNOWN: KnownErrors = {
+  forbidden: { say: "the profile or post is age-restricted, so it can't be read", type: "INVALID_INPUT", retry: false },
+  platform_blocking: { say: "the platform is blocking ScrapeCreators right now", type: "PROVIDER_DOWN", retry: true },
+};
+const BY_MESSAGE: [RegExp, string][] = [
+  [/age restricted/i, "forbidden"],
+  [/blocking us/i, "platform_blocking"],
+];
+
+const num = (v: unknown): number | null => (typeof v === "number" && Number.isFinite(v) ? v : null);
+const isoFromSeconds = (s: unknown) => (typeof s === "number" ? new Date(s * 1000).toISOString() : undefined);
+
+// ---------- Google ----------
+
+export async function googleSearch(query: string, region?: string): Promise<Result<WebResult[]>> {
+  const { body, usage } = await get("/v1/google/search", { query, region });
+  const results = (body?.results ?? []).map((r: any) => ({
+    url: r.url,
+    title: r.title ?? "",
+    description: r.description,
+  }));
+  return { data: results, usage };
+}
+
+/** Ads from Google's Ads Transparency Center for a website domain. */
+export async function googleAds(domain: string): Promise<Result<AdCreative[]>> {
+  const { body, usage } = await get("/v1/google/company/ads", { domain });
+  const ads = (body?.ads ?? []).map((a: any): AdCreative => ({
+    network: "google",
+    id: a.creativeId,
+    advertiser: a.advertiserName,
+    format: a.format,
+    firstShown: a.firstShown,
+    lastShown: a.lastShown,
+    url: a.adUrl,
+  }));
+  return { data: ads, usage };
+}
+
+// ---------- Meta Ad Library ----------
+
+/** Facebook pages matching a business name, with their Instagram username when linked. */
+export async function metaAdvertisers(query: string): Promise<Result<AdvertiserMatch[]>> {
+  const { body, usage } = await get("/v1/facebook/adLibrary/search/companies", {
+    query,
+  });
+  const matches = (body?.searchResults ?? []).map((r: any) => ({
+    pageId: String(r.page_id),
+    name: r.name ?? "",
+    instagram: r.ig_username || undefined,
+    likes: num(r.likes),
+  }));
+  return { data: matches, usage };
+}
+
+/** One Meta Ad Library ad from its link or id: its video (when it has one) and text. */
+export async function metaAd(link: string): Promise<Result<{ videoUrl: string | null; text: string | null; pageName: string | null } | null>> {
+  const id = link.match(/[?&]id=(\d+)/)?.[1] ?? (/^\d+$/.test(link.trim()) ? link.trim() : undefined);
+  const { body, usage } = await get("/v1/facebook/adLibrary/ad", id ? { id } : { url: link });
+  const snap = body?.snapshot;
+  if (!snap) return { data: null, usage };
+  const video = snap.videos?.find((v: any) => v.video_hd_url || v.video_sd_url) ?? snap.cards?.find((c: any) => c.video_hd_url || c.video_sd_url);
+  return {
+    data: {
+      videoUrl: video?.video_hd_url || video?.video_sd_url || null,
+      text: typeof snap.body === "string" ? snap.body : (snap.body?.text ?? null),
+      pageName: snap.page_name ?? body?.pageName ?? null,
+    },
+    usage,
+  };
+}
+
+/** Active Meta (Facebook and Instagram) ads of a page. */
+export async function metaAds(pageId: string, country?: string): Promise<Result<AdCreative[]>> {
+  const { body, usage } = await get("/v1/facebook/adLibrary/company/ads", {
+    pageId,
+    country,
+    status: "ACTIVE",
+  });
+  const ads = (body?.results ?? []).map((a: any): AdCreative => {
+    const snap = a.snapshot ?? {};
+    return {
+      network: "meta",
+      id: String(a.ad_archive_id),
+      advertiser: a.page_name ?? snap.page_name,
+      text: snap.body?.text ?? snap.cards?.[0]?.body,
+      title: snap.title ?? snap.cards?.[0]?.title,
+      cta: snap.cta_text,
+      format: snap.display_format,
+      firstShown: isoFromSeconds(a.start_date),
+      lastShown: isoFromSeconds(a.end_date),
+      videoUrl: snap.videos?.[0]?.video_hd_url ?? snap.videos?.[0]?.video_sd_url ?? snap.cards?.[0]?.video_hd_url ?? snap.cards?.[0]?.video_sd_url ?? undefined,
+      imageUrl: snap.images?.[0]?.original_image_url ?? snap.cards?.[0]?.original_image_url ?? undefined,
+    };
+  });
+  return { data: ads, usage };
+}
+
+/** A library result as a video ad, or null when it has no video (only video ads are asked for, but carousels slip in). */
+function libraryAd(a: any): LibraryAd | null {
+  const snap = a?.snapshot ?? {};
+  const video = snap.videos?.find((v: any) => v.video_hd_url || v.video_sd_url) ?? snap.cards?.find((c: any) => c.video_hd_url || c.video_sd_url);
+  const videoUrl = video?.video_hd_url || video?.video_sd_url;
+  if (!videoUrl || !a?.ad_archive_id) return null;
+  const text = typeof snap.body === "string" ? snap.body : (snap.body?.text ?? video?.body);
+  return {
+    id: String(a.ad_archive_id),
+    brand: a.page_name ?? snap.page_name ?? "",
+    brandImage: snap.page_profile_picture_url || undefined,
+    // Dynamic ads keep their template markers ({{product.name}}); they say nothing to a person
+    text: typeof text === "string" && !/^\{\{.*\}\}$/.test(text.trim()) ? text : undefined,
+    videoUrl,
+    previewUrl: video?.video_preview_image_url || undefined,
+    startedAt: isoFromSeconds(a.start_date),
+    platforms: (Array.isArray(a.publisher_platform) ? a.publisher_platform : []).map((p: unknown) => String(p).toLowerCase()),
+    link: `https://www.facebook.com/ads/library/?id=${a.ad_archive_id}`,
+  };
+}
+
+/** The video ads on one results page; versions of one ad (same collation id) show once. */
+function libraryPage(results: any[], cursor: unknown): LibraryPage {
+  const seen = new Set<string>();
+  const ads: LibraryAd[] = [];
+  for (const a of results) {
+    const group = String(a?.collation_id ?? a?.ad_archive_id ?? "");
+    if (group && seen.has(group)) continue;
+    const ad = libraryAd(a);
+    if (!ad) continue;
+    seen.add(group);
+    ads.push(ad);
+  }
+  return { ads, cursor: typeof cursor === "string" && cursor ? cursor : null };
+}
+
+/** Active video ads whose words match a keyword ("hair transplant"), most seen first. 1 credit a page. */
+export async function metaLibrarySearch(query: string, country: string, cursor?: string): Promise<Result<LibraryPage>> {
+  const { body, usage } = await get("/v1/facebook/adLibrary/search/ads", { query, country, status: "ACTIVE", media_type: "VIDEO", cursor });
+  return { data: libraryPage(body?.searchResults ?? [], body?.cursor), usage };
+}
+
+
+// ---------- Profiles ----------
+
+export async function profile(platform: ReadablePlatform, handle: string): Promise<Result<SocialProfile | null>> {
+  switch (platform) {
+    case "instagram": {
+      const { body, usage } = await get("/v1/instagram/profile", { handle });
+      const u = body?.data?.user;
+      if (!u) return { data: null, usage };
+      return {
+        data: {
+          platform,
+          handle,
+          name: u.full_name,
+          bio: u.biography,
+          followers: num(u.edge_followed_by?.count),
+          url: `https://www.instagram.com/${handle}/`,
+        },
+        usage,
+      };
+    }
+    case "tiktok": {
+      const { body, usage } = await get("/v1/tiktok/profile", { handle });
+      if (!body?.user) return { data: null, usage };
+      return {
+        data: {
+          platform,
+          handle,
+          name: body.user.nickname,
+          bio: body.user.signature,
+          followers: num(body.stats?.followerCount),
+          url: `https://www.tiktok.com/@${handle}`,
+        },
+        usage,
+      };
+    }
+    case "youtube": {
+      const { body, usage } = await get("/v1/youtube/channel", { handle });
+      if (!body?.channelId) return { data: null, usage };
+      return {
+        data: {
+          platform,
+          handle,
+          name: body.name,
+          bio: body.description,
+          followers: num(body.subscriberCount),
+          url: body.channel ?? `https://www.youtube.com/@${handle}`,
+        },
+        usage,
+      };
+    }
+  }
+}
+
+// ---------- Posts ----------
+
+function instagramPost(p: any): SocialPost {
+  const type = p.media_type === 2 ? "video" : p.media_type === 8 ? "carousel" : "image";
+  return {
+    id: String(p.code ?? p.id),
+    platform: "instagram",
+    url: p.url ?? (p.code ? `https://www.instagram.com/p/${p.code}/` : undefined),
+    caption: p.caption?.text,
+    publishedAt: isoFromSeconds(p.taken_at),
+    mediaType: type,
+    videoUrl: p.video_versions?.[0]?.url,
+    views: num(p.play_count ?? p.ig_play_count),
+    likes: num(p.like_count),
+    comments: num(p.comment_count),
+    shares: null,
+    saves: null,
+  };
+}
+
+function tiktokPost(p: any, handle: string): SocialPost {
+  const s = p.statistics ?? {};
+  return {
+    id: String(p.aweme_id),
+    platform: "tiktok",
+    url: `https://www.tiktok.com/@${handle}/video/${p.aweme_id}`,
+    caption: p.desc,
+    publishedAt: p.create_time_utc ?? isoFromSeconds(p.create_time),
+    mediaType: "video",
+    videoUrl: p.video?.play_addr?.url_list?.[0],
+    views: num(s.play_count),
+    likes: num(s.digg_count),
+    comments: num(s.comment_count),
+    shares: num(s.share_count),
+    saves: num(s.collect_count),
+  };
+}
+
+function youtubePost(v: any): SocialPost {
+  return {
+    id: String(v.id),
+    platform: "youtube",
+    url: v.url,
+    caption: v.title,
+    publishedAt: v.publishedTime,
+    mediaType: "video",
+    views: num(v.viewCountInt),
+    likes: null,
+    comments: null,
+    shares: null,
+    saves: null,
+  };
+}
+
+/** The platform a public post link belongs to, when we can read it. */
+export function platformOfLink(url: string): ReadablePlatform | null {
+  if (/instagram\.com\/(p|reel|reels|tv)\//i.test(url)) return "instagram";
+  if (/tiktok\.com\//i.test(url)) return "tiktok";
+  if (/(youtube\.com\/(watch|shorts)|youtu\.be\/)/i.test(url)) return "youtube";
+  return null;
+}
+
+/** One public post from its link (Instagram, TikTok or YouTube), or null when it can't be read. */
+export async function post(url: string): Promise<Result<SocialPost | null>> {
+  const platform = platformOfLink(url);
+  if (!platform) return { data: null, usage: usage(0) };
+  switch (platform) {
+    case "instagram": {
+      const { body, usage } = await get("/v1/instagram/post", { url, trim: "true" });
+      // The trimmed answer has the post at the top level; the full one under "data"
+      const m = body?.xdt_shortcode_media ?? body?.data?.xdt_shortcode_media;
+      if (!m) return { data: null, usage };
+      return {
+        data: {
+          id: String(m.shortcode ?? m.id),
+          platform,
+          url,
+          caption: m.edge_media_to_caption?.edges?.[0]?.node?.text,
+          mediaType: m.is_video ? "video" : m.edge_sidecar_to_children ? "carousel" : "image",
+          videoUrl: m.video_url ?? undefined,
+          imageUrl: m.display_url ?? undefined,
+          views: num(m.video_play_count ?? m.video_view_count),
+          likes: num(m.edge_media_preview_like?.count),
+          comments: num(m.edge_media_to_parent_comment?.count),
+          shares: null,
+          saves: null,
+        },
+        usage,
+      };
+    }
+    case "tiktok": {
+      const { body, usage } = await get("/v2/tiktok/video", { url });
+      const v = body?.aweme_detail;
+      if (!v) return { data: null, usage };
+      const s = v.statistics ?? {};
+      return {
+        data: {
+          id: String(v.aweme_id),
+          platform,
+          url,
+          caption: v.desc,
+          mediaType: "video",
+          videoUrl: v.video?.download_no_watermark_addr?.url_list?.[0] ?? v.video?.play_addr?.url_list?.[0],
+          imageUrl: v.video?.cover?.url_list?.[0],
+          views: num(s.play_count),
+          likes: num(s.digg_count),
+          comments: num(s.comment_count),
+          shares: num(s.share_count),
+          saves: num(s.collect_count),
+        },
+        usage,
+      };
+    }
+    case "youtube": {
+      const { body, usage } = await get("/v1/youtube/video", { url });
+      if (!body) return { data: null, usage };
+      return {
+        data: {
+          id: String(body.id ?? url),
+          platform,
+          url,
+          caption: [body.title, body.description].filter(Boolean).join("\n"),
+          mediaType: "video",
+          views: num(body.viewCountInt ?? body.viewCount),
+          likes: num(body.likeCountInt ?? body.likeCount),
+          comments: null,
+          shares: null,
+          saves: null,
+        },
+        usage,
+      };
+    }
+  }
+}
+
+/** Most recent public posts of a profile (one page, up to about 12–30 depending on the platform). */
+export async function posts(platform: ReadablePlatform, handle: string, limit: number): Promise<Result<SocialPost[]>> {
+  switch (platform) {
+    case "instagram": {
+      const { body, usage } = await get("/v2/instagram/user/posts", { handle });
+      return {
+        data: (body?.items ?? []).slice(0, limit).map(instagramPost),
+        usage,
+      };
+    }
+    case "tiktok": {
+      const { body, usage } = await get("/v3/tiktok/profile/videos", {
+        handle,
+      });
+      return {
+        data: (body?.aweme_list ?? []).slice(0, limit).map((p: any) => tiktokPost(p, handle)),
+        usage,
+      };
+    }
+    case "youtube": {
+      const { body, usage } = await get("/v1/youtube/channel-videos", {
+        handle,
+        sort: "latest",
+      });
+      return {
+        data: (body?.videos ?? []).slice(0, limit).map(youtubePost),
+        usage,
+      };
+    }
+  }
+}
