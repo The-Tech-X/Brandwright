@@ -82,7 +82,7 @@ export const produceItem = inngest.createFunction(
     // Direct video: one written prompt, one Seedance video, final (config/video-direct.ts)
     if (isDirectVideo(format)) return produceDirectVideo(step, db, { businessId, planId, itemId, oneOff }, settle);
 
-    // The "direct" test mode: no Creative Director and no QA; the image model gets everything and its picture is final
+    // Direct image ads: no Creative Director; the image model gets everything, then the QA Critic checks its picture
     if (isDirectImageAd(format)) {
       const res = await produceDirect(step, db, { businessId, planId, itemId, oneOff }, settle);
       return res;

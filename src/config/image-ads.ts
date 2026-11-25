@@ -1,6 +1,6 @@
 // How image ads are made. Set here, not in env, so every deploy makes them the same way.
-// "direct" (in use): no Creative Director and no QA. All the context, the product photos and the logo
-// go straight to the image model, and its picture is the final ad.
+// "direct" (in use): no Creative Director. All the context with a short creative brief, the product photos and
+// the logo go straight to the image model; the QA Critic checks its picture (one remake below the bar).
 // "free": the image model makes the whole ad, words included, from a prompt the Creative Director
 // writes with no template; our code only adds the logo in a corner.
 // "designed": the earlier way: the model makes a photo and our Satori layouts draw every word.

@@ -4,11 +4,10 @@ import { isImageStyle, styleBrief } from "@/core/content/styles";
 import { briefSchema, type Brief, type CtaLink } from "@/core/creative/brief";
 import type { CreativeContext } from "./context";
 
-// "Direct" image ads (the mode in config/image-ads.ts): no Creative Director and no QA. Everything the Creative
-// Director would have read goes to the image model as plain facts, together with the product photos
-// and the logo, and the model's picture is the final ad. Nothing here says how the picture should
-// look. The brief that goes with the post is made by code, since the post still needs a title,
-// captions and a call to action.
+// "Direct" image ads (the mode in config/image-ads.ts): no Creative Director. Everything the Creative Director
+// would have read goes to the image model as plain facts, after a short creative brief (directRequest), together
+// with the product photos and the logo; the QA Critic then checks the picture. The brief that goes with the post
+// is made by code, since the post still needs a title, captions and a call to action.
 
 /** What the images attached to the request are, in order (so the model knows which is the product and which the logo) */
 export interface DirectImage {
@@ -151,11 +150,26 @@ export function directContext(ctx: CreativeContext, colours: DirectColours | nul
   return lines.join("\n");
 }
 
-/** What goes to the image model: one plain request, then everything above. The logo is attached only when the owner wants it. */
+/**
+ * What goes to the image model: the request and a short creative brief (concept, golden-ratio composition, the
+ * words, the logo), then everything above. Left to itself the model made plain product photos with no words and
+ * no logo. The logo is attached, and asked for, only when the owner wants it.
+ */
 export const directRequest = (logo: boolean) =>
-  logo
-    ? "Create one new ad image for this business's post, based on the details below. The attached images are references for the real products (or the business's own place, team or work) and the brand's logo: make a new picture, not a collage of them."
-    : "Create one new ad image for this business's post, based on the details below. The attached images are references for the real products (or the business's own place, team or work): make a new picture, not a collage of them. No logo goes on this ad: don't draw one.";
+  [
+    "Create one new, scroll-stopping ad image for this business's post, based on the details below. The attached images are references (see ATTACHED IMAGES): make a new picture, not a collage or a copy of them.",
+    "",
+    "HOW TO MAKE IT",
+    "- Concept: one bold, creative idea that brings the post's angle (THIS POST) to life through a striking setting, styling, light or point of view, at the level of a top agency campaign. Never a plain catalogue shot or a copy of the reference photo.",
+    "- Product: what is sold looks exactly like its photos (shape, colours, pattern, details). A person in a product photo is not part of the product: show a new person or none, as the People line says.",
+    "- Composition: golden ratio. The main subject sits on a golden-ratio line or point (about 0.618 of the width or height, not dead centre unless the concept needs symmetry); the words sit in the calm, open part of the picture, balanced against the subject; nothing important touches the edges.",
+    "- Words: a short headline (3–8 words) that carries the angle, and at most one short supporting line (the offer, the price as given, or the next step). Write them in the business's language, spelled exactly, large, crisp and easy to read against what is behind them, in a typeface that suits the brand. Only facts from the details: no invented prices, discounts, ratings, reviews or claims. No buttons, links, web addresses, phone numbers or hashtags, and none of the labels below (Angle, Objective, Desire…); nothing else is written anywhere.",
+    logo
+      ? "- Logo: place the attached logo once, small, in a corner clear of the words and the subject, exactly as it is (the same shape, colours and letters, never redrawn)."
+      : "- Logo: no logo goes on this ad. Don't draw one or invent a brand mark.",
+    "- Colours: the brand's colours (BRAND LOOK) where they fit. Colour codes are values, never text to write.",
+    "- An ad the owner likes (when ATTACHED IMAGES has one): make this ad the same way, with its layout, composition, camera angle, styling, type and mood. It comes before the concept and composition lines above; the product, the words, the facts and the logo are still this business's, never the other brand's.",
+  ].join("\n");
 
 /** Kie's prompt box is large but not endless; the context rarely comes near this. */
 const MAX_PROMPT = 12_000;
