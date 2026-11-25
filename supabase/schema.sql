@@ -199,7 +199,8 @@ create trigger seed_business after insert on public.businesses
   for each row execute function public.seed_business();
 
 -- A new login gets its own business and is its owner; a login made with app_metadata.role = 'admin' becomes an
--- admin instead and gets none
+-- admin instead and gets none. Supabase's createUser can save the login before its app_metadata, so this may
+-- not see the role: scripts/setup/admin.ts removes the business made for an admin that way
 create or replace function public.create_business_for_new_user()
 returns trigger
 language plpgsql

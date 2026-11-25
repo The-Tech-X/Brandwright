@@ -30,4 +30,29 @@ if (error) {
 const { error: listError } = await db.from("admins").upsert({ user_id: data.user.id });
 if (listError) console.log(`Not in the admins list yet (${listError.message}). Run supabase/schema.sql first: its trigger lists every login made with the admin role.`);
 
+// Supabase saves the login before it adds app_metadata, so the trigger can miss the admin role and make the
+// login a business of its own. An admin has none (a login with a business is sent to onboarding), so remove it.
+const removed = await removeOwnBusinesses(data.user.id);
+if (removed) console.log(`Removed the empty business made for this login (${removed}).`);
+
 console.log(`Admin login ready\n  Email:    ${data.user.email}\n  Password: ${password}\n  Open /login, then /admin.`);
+
+/** Deletes the businesses this login owns that were never set up (everything in them cascades). */
+async function removeOwnBusinesses(userId: string): Promise<number> {
+  const { data: owned, error } = await db.from("businesses").select("id, business_profile(onboarding_status)").eq("owner_id", userId);
+  if (error) {
+    console.log(`Couldn't check for a business made for this login (${error.message}). Delete it in Supabase if the login opens onboarding.`);
+    return 0;
+  }
+  const unused = (owned ?? []).filter((b) => {
+    const profile = Array.isArray(b.business_profile) ? b.business_profile[0] : b.business_profile;
+    return !profile || profile.onboarding_status === "not_started";
+  });
+  if (!unused.length) return 0;
+  const { error: deleteError } = await db.from("businesses").delete().in("id", unused.map((b) => b.id));
+  if (deleteError) {
+    console.log(`Couldn't remove the business made for this login (${deleteError.message}). Delete it in Supabase.`);
+    return 0;
+  }
+  return unused.length;
+}
