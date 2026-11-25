@@ -14,12 +14,11 @@ import { finalName, mediaKey, publicUrl, ratioName, workKey } from "@/providers/
 import { SCENE_LAYOUT_SYSTEM, sceneLayoutPrompt, sceneLayoutSchema } from "@/prompts/agents/scene-layout";
 import type { FootageAnalysis } from "@/prompts/agents/footage";
 import { logUsage } from "@/agents/weekly/task";
-import { optional } from "@/agents/run";
 import { plannedSeconds } from "@/agents/creative-director/checks-video";
 import { pictureOnly } from "./picture-only";
 import { canvasesFor } from "./canvases";
 import { startJob, waitForJobs, type KieJob } from "./kie";
-import { copyToStorage, markMediaReady, saveFile } from "./media";
+import { copyToStorage, markMediaReady } from "./media";
 import { photoPrompt, photoSettings, referenceUse } from "./photos";
 import type { ProduceArgs, Produced } from "./types";
 import { peoplePromptLine } from "@/core/content/prefs";
@@ -56,7 +55,6 @@ export interface VideoState {
   musicKey: string | null;
 }
 
-const languageCode = (lang: string | null) => (lang && /^[a-z]{2}$/i.test(lang) ? lang.toLowerCase() : undefined);
 
 /** Card scenes and photo slideshows don't need a moving AI clip: a still with a camera move is enough. */
 function needsClip(scene: VideoScene, style: string | null): boolean {
@@ -113,32 +111,8 @@ export async function produceVideo(a: ProduceArgs, brief: VideoBrief, previous: 
     };
   };
 
-  // 1. Voice for each voiced scene: real spoken length and word timings
-  const voices =
-    previous?.voices ??
-    (await a.task(
-      `voice-${a.round}`,
-      async (track) => {
-        const { data: profile } = await a.db().from("business_profile").select("voice_id, language").single();
-        const out: VideoState["voices"] = [];
-        for (const [i, scene] of scenes.entries()) {
-          if (!scene.voiceover.trim()) {
-            out.push(null);
-            continue;
-          }
-          const res = await ai.voice(scene.voiceover, profile?.voice_id ?? undefined, languageCode(profile?.language ?? null));
-          track(res.usage);
-          const key = workKey(a.businessId, a.mediaId, `voice-${i}.mp3`);
-          await saveFile(a.db(), a.mediaId, "voice", key, res.data.buffer, "audio/mpeg", { position: i });
-          out.push({ key, durationSec: res.data.durationSec, words: res.data.words });
-        }
-        return out;
-      },
-      (r) => {
-        const voiced = r.filter(Boolean) as NonNullable<VideoState["voices"][number]>[];
-        return voiced.length ? `Recorded the voice-over: ${voiced.length} scenes, ${Math.round(voiced.reduce((s, v) => s + v.durationSec, 0))} seconds` : "No voice-over in this video";
-      }
-    ));
+  // 1. No recorded voice-over in scene videos (no voice service): each scene lasts its talking moment or the brief's length
+  const voices: VideoState["voices"] = previous?.voices ?? scenes.map(() => null);
 
   /** Seconds each scene lasts: its voice, its talking moment, or the brief's length */
   const seconds = scenes.map((s, i) => (voices[i] ? voices[i]!.durationSec + 0.35 : plannedSeconds(s)));
@@ -249,27 +223,8 @@ export async function produceVideo(a: ProduceArgs, brief: VideoBrief, previous: 
     () => "Saved the scenes"
   );
 
-  // 5. Music in the client's mood (voice-only styles have none; the video works without it)
-  let musicKey = previous?.musicKey ?? null;
-  if (!previous && brief.sound !== "voice") {
-    const total = seconds.reduce((s, x) => s + x, 0) + 1;
-    musicKey = await optional(
-      a.task(
-        `music-${a.round}`,
-        async (track) => {
-          const quiet = brief.sound === "speech" ? " Quiet and unobtrusive: it plays under people talking." : "";
-          const res = await ai.music(`${brief.musicMood}. Instrumental background music for a short social media ad, no vocals, steady energy.${quiet}`, Math.ceil(total));
-          track(res.usage);
-          const key = workKey(a.businessId, a.mediaId, "music.mp3");
-          await saveFile(a.db(), a.mediaId, "music", key, res.data, "audio/mpeg");
-          return key;
-        },
-        () => "Made the background music"
-      ),
-      // A video without music beats no video, whatever ElevenLabs says
-      { anyError: true }
-    );
-  }
+  // 5. No music service: scene videos keep only their clips' own sound and the sound effects
+  const musicKey = previous?.musicKey ?? null;
 
   // 6. Where the subject and the calm area are in each still (words go beside the subject)
   const layouts = await a.task(

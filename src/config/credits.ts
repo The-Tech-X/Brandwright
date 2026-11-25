@@ -15,6 +15,8 @@ export type CreditAction =
   | "text_post"
   | "video"
   | "video_copy"
+  | "video_720p"
+  | "video_copy_720p"
   | "social_account";
 
 /** High-level groups for usage screens (nobody wants every single charge) */
@@ -42,6 +44,9 @@ export const CREDIT_ACTIONS: Record<CreditAction, { credits: number; label: stri
   text_post: { credits: 2, label: "Text post", category: "text" },
   video: { credits: 70, label: "Video (up to 30 seconds)", category: "videos" },
   video_copy: { credits: 70, label: "Copy a video", category: "videos" },
+  // Seedance charges more than twice as much per second at 720p
+  video_720p: { credits: 140, label: "Video in 720p (up to 30 seconds)", category: "videos" },
+  video_copy_720p: { credits: 140, label: "Copy a video in 720p", category: "videos" },
   social_account: { credits: 60, label: "Social account (per month)", category: "accounts" },
 };
 

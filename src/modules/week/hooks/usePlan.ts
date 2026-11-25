@@ -114,6 +114,8 @@ export interface CreateAdInput {
   referenceUrl?: string | null;
   /** Image ads: an ad image to make the same way */
   referenceImageKey?: string | null;
+  /** Videos: 480p (default) or 720p, which costs more credits */
+  videoResolution?: "480p" | "720p" | null;
 }
 
 export type AutoKind = "static" | "carousel" | "video";

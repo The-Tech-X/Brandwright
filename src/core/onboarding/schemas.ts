@@ -77,8 +77,6 @@ export const contentSchema = z.object({
   videoStyles: ranked(VIDEO_STYLES, MAX_STYLES),
   people: choice(PEOPLE_CHOICES, "Pick who appears in your posts"),
   peoplePhotos: z.array(uploadSchema).max(10, "Up to 10 photos"),
-  voiceId: z.string().nullable(),
-  voiceName: z.string().nullable(),
   musicMood: z.enum(MUSIC_MOODS),
   logo: z.enum(LOGO_CHOICES),
   ownMedia: z.array(mediaUploadSchema).max(30, "Up to 30 files"),
@@ -142,7 +140,7 @@ function ctaHasLink(b: { cta: CtaChoice; ctaLinks: Record<CtaChoice, string> }, 
 
 /** Settings → Content: the "Your content" choices the weekly agents follow, and where customers go. */
 export const contentSettingsSchema = contentSchema
-  .pick({ mix: true, imageStyles: true, videoStyles: true, people: true, voiceId: true, voiceName: true, musicMood: true, logo: true })
+  .pick({ mix: true, imageStyles: true, videoStyles: true, people: true, musicMood: true, logo: true })
   .extend(ctaShape)
   .superRefine(ctaHasLink);
 

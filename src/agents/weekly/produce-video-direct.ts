@@ -8,7 +8,7 @@ import { copyToStorage, markMediaReady, syncCost } from "@/agents/producer/media
 import type { Step } from "@/agents/producer/types";
 import { LIMITS } from "@/config/limits";
 import { platformMeta } from "@/config/platforms";
-import { DIRECT_VIDEO } from "@/config/video-direct";
+import { DIRECT_VIDEO, isVideoResolution } from "@/config/video-direct";
 import { isVideoStyle } from "@/core/content/styles";
 import { AppError } from "@/core/errors";
 import { getItem, updateItem } from "@/core/plans/plans";
@@ -17,8 +17,7 @@ import type { PlanItem } from "@/core/plans/types";
 import { loadTheme } from "@/creative/theme";
 import { ai } from "@/providers/ai/registry";
 import { request } from "@/providers/http";
-import { getJob, renderBackend, submitJob } from "@/providers/ffmpeg/client";
-import { finalName, mediaKey, publicUrl, ratioName, tmpKey, workKey } from "@/providers/storage/paths";
+import { finalName, mediaKey, publicUrl, ratioName, workKey } from "@/providers/storage/paths";
 import { upload } from "@/providers/storage/r2";
 import type { ReferenceVideo } from "@/prompts/agents/reference-video";
 import { DIRECT_VIDEO_SYSTEM, directVideoPrompt, directVideoSchema } from "@/prompts/agents/video-direct";
@@ -40,7 +39,7 @@ export async function produceDirectVideo(
 
   // "Copy a video": the reference is broken down scene by scene first (once)
   const referenceId = await step.run("direct-video-reference", async () => (await getItem(db(), itemId)).reference_video_id ?? null);
-  if (referenceId) await studyReference(step, cd, db, businessId, referenceId);
+  if (referenceId) await studyReference(cd, db, referenceId);
 
   // 1. One prompt for the video model, written from the whole context
   const written = await cd(
@@ -100,12 +99,18 @@ export async function produceDirectVideo(
         durationSec: v.durationSec,
       };
       await updateItem(db(), itemId, { brief, captions, hook_text: v.hook, status: "briefed", error: null });
-      return { brief, prompt: v.videoPrompt, durationSec: v.durationSec, refs: images.map((i) => i.url), logo: !!logo };
+      // Copy a video: whether the writer made music like the reference's or new music, and why (its track is never used)
+      const music = ctx.reference ? { similar: v.music === "similar", why: v.musicWhy } : null;
+      return { brief, prompt: v.videoPrompt, durationSec: v.durationSec, refs: images.map((i) => i.url), logo: !!logo, music };
     },
-    (r) => `Wrote the video prompt: ${r.durationSec} seconds, ${r.prompt.length} characters, ${r.refs.length} reference image${r.refs.length === 1 ? "" : "s"}${r.logo ? " (with the logo)" : ""}`
+    (r) =>
+      `Wrote the video prompt: ${r.durationSec} seconds, ${r.prompt.length} characters, ${r.refs.length} reference image${r.refs.length === 1 ? "" : "s"}${r.logo ? " (with the logo)" : ""}` +
+      (r.music ? `. Music: ${r.music.similar ? "new music like the reference's" : "new music unlike the reference's"}${r.music.why ? ` (${r.music.why})` : ""}` : "")
   );
 
   const item = (await step.run("load-item", () => getItem(db(), itemId))) as PlanItem;
+  // The resolution the owner picked for a video made by hand (charged at its own price); otherwise the default
+  const resolution = isVideoResolution(item.video_resolution) ? item.video_resolution : DIRECT_VIDEO.resolution;
   const mediaId = await step.run("start-media", async () => {
     const { data, error } = await db()
       .from("media")
@@ -128,43 +133,29 @@ export async function produceDirectVideo(
   });
   const producer = taskFor(step, "producer", { businessId, planId, itemId, mediaId });
 
-  // 2. Copy a video: the reference's own sound track (up to 30 s), cut out by our worker, for Seedance to use as the music
-  const audioUrl = referenceId ? await referenceAudio(step, db, businessId, referenceId) : null;
+  // 2. One request to Seedance 2.5: the prompt and the reference images. It makes all the sound itself (voices, new
+  // music, effects); no audio is ever attached, so no one else's music is used.
+  const started = await producer(
+    "direct-video-start",
+    async () => {
+      const refs: string[] = [];
+      for (const [i, url] of written.refs.entries()) refs.push(await fitReference(url, workKey(businessId, mediaId, `ref-${i + 1}.jpg`)));
+      const res = await ai.videoFull(written.prompt, {
+        referenceImageUrls: refs,
+        durationSec: written.durationSec,
+        aspectRatio: DIRECT_VIDEO.aspectRatio,
+        resolution,
+      });
+      // The cost is logged once the video is made: a failed job is free
+      return { taskId: res.data, usage: res.usage, refs: refs.length };
+    },
+    (r) => `Sent the prompt and ${r.refs} reference image${r.refs === 1 ? "" : "s"} to Seedance 2.5 (${written.durationSec} seconds, ${resolution})`
+  );
 
-  // 3. One request to Seedance 2.5: the prompt, the reference images and, when there is one, the reference's music.
-  // Seedance checks the sound it made only at the end; when it blocks the reference's music for copyright, the video
-  // is made once more with new original music (a failed job uses no credits, only time).
-  const start = (key: string, withAudio: boolean) =>
-    producer(
-      key,
-      async () => {
-        const refs: string[] = [];
-        for (const [i, url] of written.refs.entries()) refs.push(await fitReference(url, workKey(businessId, mediaId, `ref-${i + 1}.jpg`)));
-        const prompt = withAudio
-          ? `${written.prompt}\n\nMUSIC: the attached reference audio is this video's music. Use it as it is, from its start, and cut on its beats; it replaces any music described above. Voices and sound effects stay as described.`
-          : written.prompt;
-        const res = await ai.videoFull(prompt, {
-          referenceImageUrls: refs,
-          referenceAudioUrls: withAudio && audioUrl ? [audioUrl] : [],
-          durationSec: written.durationSec,
-          aspectRatio: DIRECT_VIDEO.aspectRatio,
-          resolution: DIRECT_VIDEO.resolution,
-        });
-        // The cost is logged once the video is made: a failed job is free
-        return { taskId: res.data, usage: res.usage, refs: refs.length, withAudio };
-      },
-      (r) => `Sent the prompt and ${r.refs} reference image${r.refs === 1 ? "" : "s"}${r.withAudio ? " and the reference's music" : ""} to Seedance 2.5 (${written.durationSec} seconds, ${DIRECT_VIDEO.resolution})`
-    );
-
-  let started = await start("direct-video-start", !!audioUrl);
-  let made = await waitForVideo(step, planId, "direct-video", started.taskId);
-  if ("fail" in made && started.withAudio && /copyright/i.test(made.fail)) {
-    started = await start("direct-video-start-new-music", false);
-    made = await waitForVideo(step, planId, "direct-video-again", started.taskId);
-  }
+  const made = await waitForVideo(step, planId, "direct-video", started.taskId);
   if ("fail" in made) throw new NonRetriableError(made.fail);
   const videoUrl = made.url;
-  await step.run("direct-video-cost", () => logUsage({ agent: "producer", businessId, planId, itemId, mediaId }, started.usage, started.withAudio ? "Seedance 2.5 made the video with the reference's music" : "Seedance 2.5 made the video"));
+  await step.run("direct-video-cost", () => logUsage({ agent: "producer", businessId, planId, itemId, mediaId }, started.usage, "Seedance 2.5 made the video"));
 
   // 3. Its video is the final post
   await producer(
@@ -206,37 +197,6 @@ async function waitForVideo(step: Step, planId: string, prefix: string, taskId: 
     if (result) return result;
   }
   return { fail: "Seedance didn't finish the video within 20 minutes. Try again." };
-}
-
-/** The reference video's sound track, up to 30 s, as a WAV cut out by our worker; null without the worker or a track of 2 s or more. */
-async function referenceAudio(step: Step, db: () => SupabaseClient, businessId: string, assetId: string): Promise<string | null> {
-  const job = await step.run("direct-video-audio", async () => {
-    if (renderBackend().id !== "worker") return null;
-    // After 7 days the file is gone and the job fails: the video then gets new music instead
-    const { data } = await db().from("reference_videos").select("storage_key, analysis").eq("id", assetId).maybeSingle();
-    const duration = Number((data?.analysis as { duration?: number } | null)?.duration ?? 0);
-    if (!data?.storage_key || duration < 2) return null;
-    const key = tmpKey(`${businessId}/reference/${assetId}/audio.wav`);
-    try {
-      const id = await submitJob({
-        inputs: [data.storage_key],
-        args: ["-i", "{input0}", "-vn", "-t", "30", "-ac", "2", "-ar", "44100", "-c:a", "pcm_s16le", "-f", "wav", "{output}"],
-        outputKey: key,
-        contentType: "audio/wav",
-      });
-      return { id, key };
-    } catch {
-      return null;
-    }
-  });
-  if (!job) return null;
-  for (let i = 0; i < 12; i++) {
-    await step.sleep(`direct-video-audio-wait-${i}`, "5s");
-    const status = await step.run(`direct-video-audio-poll-${i}`, () => getJob(job.id).then((r) => r.status).catch(() => "failed" as const));
-    if (status === "done") return publicUrl(job.key);
-    if (status === "failed") return null;
-  }
-  return null;
 }
 
 /** Seedance takes images 300–6000 px a side and 0.4–2.5 wide to tall: each reference is redrawn to fit and kept in our storage. */

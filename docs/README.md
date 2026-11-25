@@ -39,7 +39,9 @@ npx inngest-cli@latest dev   # background jobs and agents, http://localhost:8288
 4. `npm run smoke scripts/setup/sfx.ts` puts the video sound effects in `shared/sfx/`.
 5. Check: `npm run smoke scripts/smoke/r2.ts`.
 
-**Video worker** (every video is drawn there): deploy `worker/` on the VPS ([`worker/README.md`](../worker/README.md)), then set `FFMPEG_WORKER_URL` and `FFMPEG_WORKER_SECRET` in `.env.local`. Check with `npm run smoke scripts/smoke/render-ad.ts`. Without it, Brandwright plans and makes no videos.
+**Video worker** (only for the older scene videos, `VIDEO_MODE = "scenes"`; direct videos, the way videos are made now, don't use it): deploy `worker/` on the VPS ([`worker/README.md`](../worker/README.md)), then set `FFMPEG_WORKER_URL` and `FFMPEG_WORKER_SECRET` in `.env.local`. Check with `npm run smoke scripts/smoke/render-ad.ts`.
+
+**ffmpeg** comes with the app (the `ffmpeg-static` package) and runs inside the jobs to watch videos and cut a reference video's music. Its install script downloads the binary; `package.json` → `allowScripts` lets newer npm versions run it. Nothing to set up.
 
 ## Stack
 
@@ -56,8 +58,7 @@ npx inngest-cli@latest dev   # background jobs and agents, http://localhost:8288
 |---|---|
 | OpenAI | Text, vision and embeddings for every agent |
 | Kie | AI pictures (nano-banana) and clips (Seedance) |
-| ElevenLabs | Voice-over with word timings, music |
-| Twelve Labs | Watching videos: the client's own footage, reference and competitor videos, the finished video's QA |
+| OpenAI (vision, audio, speech-to-text) + bundled ffmpeg | Watching videos ourselves: the client's own footage, reference and competitor videos, the finished video's QA (no outside video service, no worker) |
 | Firecrawl | Reading websites |
 | ScrapeCreators | Public profiles and posts, Meta and Google ad libraries, Google search |
 | Zernio | Publishing, scheduling, connected accounts, post analytics |
@@ -97,7 +98,7 @@ Clients pay with **credits** (1 credit = $0.10): the client pays outside the app
 
 One Vercel project + one Supabase project + one Inngest environment + one video worker for all businesses.
 
-- **App (Vercel)**: set every variable from `.env.example` (never `INNGEST_DEV`). Run the R2 bucket script with the app's address so browser uploads are allowed.
+- **App (Vercel)**: set every variable from `.env.example` (never `INNGEST_DEV`). Run the R2 bucket script with the app's address so browser uploads are allowed. The bundled ffmpeg binary ships with the `/api/inngest` function (`next.config.ts` → `outputFileTracingIncludes`), where every agent runs.
 - **Worker (VPS)**: see [`worker/README.md`](../worker/README.md). Deploy it whenever `worker/` changes, so it always runs the same code as the app.
 - **Database**: a change goes into `supabase/schema.sql`, and the same change is run once in the SQL Editor before the code that needs it is deployed.
 

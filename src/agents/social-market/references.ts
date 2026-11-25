@@ -7,7 +7,7 @@ import type { AnalyzedVideo } from "./hooks";
 
 // Posts the client pasted in onboarding as the content they want. Read once (ScrapeCreators); their
 // caption and numbers are kept on the link's brand_sources row, and what their video does well
-// (Twelve Labs, in the video step) is added there too. Context for the Strategist, never a fact.
+// (watched in the video step) is added there too. Context for the Strategist, never a fact.
 
 const MAX_LINKS = 10;
 const PARALLEL = 3;

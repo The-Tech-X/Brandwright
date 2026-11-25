@@ -20,7 +20,7 @@ Older planning pages (the Blueprint, Data Model and Sprint plans on claude.ai) a
 ## Working rules
 
 - **Commits**: never commit or push unless the user asks in that conversation.
-- **Paid calls**: ask before any call that costs money or quota (OpenAI, Kie, ElevenLabs, Twelve Labs, Firecrawl, ScrapeCreators, Zernio posts, Upload-Post). Free without asking: offline checks, local renders, our own worker and storage, database reads.
+- **Paid calls**: ask before any call that costs money or quota (OpenAI, Kie, Firecrawl, ScrapeCreators, Zernio posts, Upload-Post). Free without asking: offline checks, local renders, our own worker and storage, database reads.
 - **Never fake a vendor response** to make a check pass. Post only to test social accounts during development.
 - **Checks after every change**: `npx tsc --noEmit`, `npx tsc -p worker` (when the worker or `worker/remotion/shared` changed), `npm run lint`, the offline checks that cover the change, and `npm run build`. While `npm run dev` runs, build with `$env:NEXT_DIST_DIR=".next-build"; npm run build` (a plain build breaks the running dev server).
 - **Secrets** live only in `.env.local` (app) and `worker/.env` (VPS), both git-ignored. Never paste them into code, docs, commits or chat.
@@ -65,7 +65,7 @@ npm run smoke scripts/check/video-timeline.ts <out.json> [preset]    # A real br
 cd worker && node scripts/render-local.ts <timeline.json> <out.mp4>  # Render it on this computer (free)
 
 # Real calls (paid ones need the user's OK)
-npm run smoke scripts/smoke/<name>.ts   # openai, kie, elevenlabs, firecrawl, scrapecreators, twelvelabs, zernio, agent-step
+npm run smoke scripts/smoke/<name>.ts   # openai, kie, firecrawl, scrapecreators, watch-video, zernio, agent-step
 npm run smoke scripts/smoke/r2.ts       # Storage: upload, public link, signed upload, delete (free)
 npm run smoke scripts/smoke/render-worker.ts   # A short check video on the deployed worker (free)
 npm run smoke scripts/smoke/render-ad.ts       # A full sample ad on the deployed worker (free)
@@ -110,7 +110,7 @@ No unit test suite yet; the offline checks above are the tests. Inngest dev serv
 - Steps `website` (start screen; starts the website scan, `src/jobs/onboarding-scan.ts`) `→ content (asks "What do you sell?" first) → basics → business (products or services) → connect → review`, then `progress` (live research) and `bible` (review and approve the Brand Bible). Order and helpers in `src/core/onboarding/steps.ts`. Rows the scan found load with `found: true`; saving the step confirms them. See `docs/technical.md` → Onboarding flow.
 - One zod schema per step in `src/core/onboarding/schemas.ts`, shared by the browser (field errors) and the server (checks). Error paths are keys like `products.0.name`.
 - Server: `load.ts` builds the whole draft from the tables; `save-*.ts` save one step each (rows are upserted by client-made UUIDs, removed ones archived or deleted); `save.ts` dispatches; `submit.ts` locks it. Settings reuse them: `saveProfile` (Business profile) and `core/content/settings.ts` (Content).
-- Client: `store/` (Zustand draft, errors, dirty flags), `hooks/useStepSave` (clean → validate → PUT → merge), `components/form/*`, `steps/<step>/*`. `StylePicker` and `VoicePicker` take their values as props, so Settings → Content reuses them.
+- Client: `store/` (Zustand draft, errors, dirty flags), `hooks/useStepSave` (clean → validate → PUT → merge), `components/form/*`, `steps/<step>/*`. `StylePicker` takes its values as props, so Settings → Content reuses it.
 - Dropdowns: always the kit `Select` (single, `searchable` for long lists) or `MultiSelect` (searchable, order = priority). Both are built on Base UI (`@base-ui/react`); never use a native `<select>`. Dates and times: `DatePicker` and `TimePicker`; never `type="date"` or `type="time"`. Floating panels use the `floating`/`popup` styles, which set `font-ob` because portals render outside the page wrapper. Dialogs: the kit `Modal`. Countries come from `src/config/countries.ts`.
 - Uploads go straight from the browser to storage with a signed link (`POST /api/uploads`); rules in `src/config/uploads.ts`.
 
@@ -122,12 +122,12 @@ Our own code does anything rule-based (maths, layout, rendering, scheduling, val
 
 All external services go through adapters in `src/providers/`. Never import a vendor SDK from a route, job, page or agent.
 
-- `providers/ai/registry.ts` — the `ai` object: `text`, `vision`, `structured` (zod), `embed`, `image`, `video`, `voice`, `voices`, `music`, `analyzeVideo`, `crawl`, `search`, `ads`, `social`. Jobs, routes and agents call `ai.*`, never a vendor file. Paid calls return `{ data, usage }`
+- `providers/ai/registry.ts` — the `ai` object: `text`, `vision`, `structured` (zod), `embed`, `image`, `video`, `videoFull`, `analyzeVideo`, `crawl`, `search`, `ads`, `social`. Jobs, routes and agents call `ai.*`, never a vendor file. Paid calls return `{ data, usage }`
 - Models in `src/config/models.ts`, estimated prices in `src/config/pricing.ts`
 - `providers/http.ts` — `request()` (timeout) and `statusError()` / `jsonOrThrow()` (status → plain `AppError`). Every adapter uses them
 - `providers/publishing/` — `Publisher` interface; `registry.ts` maps provider → implementation. Default `zernio`; `upload-post` stays registered so old rows resolve
 - `providers/analytics/` — `Analytics` interface, `zernio.ts` (post metrics, past posts, follower stats)
-- `providers/crawl/firecrawl.ts`, `providers/social/scrapecreators.ts` (search, ad libraries, public profiles and posts), `providers/video-understanding/twelvelabs.ts`
+- `providers/crawl/firecrawl.ts`, `providers/social/scrapecreators.ts` (search, ad libraries, public profiles and posts), `providers/video-understanding/watch.ts` (our video watcher: frames and sound by the bundled ffmpeg in `providers/ffmpeg/local.ts`, read together by OpenAI vision, audio and speech-to-text; no outside video service, no worker)
 - `providers/ffmpeg/` — `client.ts`: `submitRender` (Remotion on our worker: every video) and `submitJob` (small ffmpeg jobs, worker or Upload-Post); `videoReady()` before anything is spent on a video
 - `providers/storage/` — files in **Cloudflare R2**: `r2.ts` (server only: upload, download, delete, signed upload links), `paths.ts` (keys, and `publicUrl()`, the only place a key becomes a URL), `remove-files.ts`
 
@@ -137,7 +137,7 @@ Each agent is an Inngest function, one step per outside call, and logs every ste
 
 **Credits**: anything that costs money takes the business's credits through `core/credits/` (`spendCredits` with a key, so retries never charge twice; `refundCredits` with the same key when the work fails; `assertCredits` / `check.ts` before starting from a screen). A post's production run charges `produce:<item>:<runId>` and its `onFailure` refunds it. Too few credits is `NO_CREDITS` (permanent, account-wide). New paid actions need a `credit_prices` row and a charge point; see `docs/technical.md` → Credits.
 
-Layout: one folder per agent. `index.ts` reads top to bottom as the agent's steps (`task(id, work, summary)`); each other file does one job (ranking, merge, colours, baselines…). Shared research code is in `src/agents/research/` (`defineResearchAgent`, context, Brand Brain). Wrap work the agent can live without in `optional(work, { failed: skipped.note("what it was doing") })`: the agent's summary then names what it skipped and why. `optional()` never skips an account-wide error (no credit, wrong key, daily cap, budget): it stops the agent. Mark `anyError: true` only for a service the agent can do without (Zernio's account list, Twelve Labs videos).
+Layout: one folder per agent. `index.ts` reads top to bottom as the agent's steps (`task(id, work, summary)`); each other file does one job (ranking, merge, colours, baselines…). Shared research code is in `src/agents/research/` (`defineResearchAgent`, context, Brand Brain). Wrap work the agent can live without in `optional(work, { failed: skipped.note("what it was doing") })`: the agent's summary then names what it skipped and why. `optional()` never skips an account-wide error (no credit, wrong key, daily cap, budget): it stops the agent. Mark `anyError: true` only for a service the agent can do without (Zernio's account list).
 
 - **Brand research** (onboarding + "Refresh brand"): 1 Website Analyst, 2 Visual Identity Analyst (also watches the client's own videos), 3 Social & Market Analyst (parallel) → 4 Brand Strategist → Brand Bible draft → client approves (`brand/approved`)
 - **Weekly loop**: 5 Planner → 6 Creative Director → 8 QA Gate 1 → 7 Producer → 8 QA Gate 2 → 9 Publisher → 10 Performance Analyst → learnings feed the Planner. One slot end to end is `src/agents/weekly/produce-item.ts`.

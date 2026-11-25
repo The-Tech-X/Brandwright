@@ -34,6 +34,9 @@ export const directVideoSchema = z.object({
   /** The concept chosen, and the two it beat */
   concept: z.string().trim().max(1500).catch(""),
   alternatives: z.array(z.string().trim().max(500)).max(3).catch([]),
+  /** Copy a video: new music like the reference's, or new music of another kind that suits this video better */
+  music: z.enum(["similar", "new"]).catch("new"),
+  musicWhy: z.string().trim().max(400).catch(""),
 });
 export type DirectVideo = z.infer<typeof directVideoSchema>;
 
@@ -64,7 +67,7 @@ PROCEDURE
    d. PEOPLE: everyone who appears, with age range, look, hair, wardrobe and manner; each stays the same in every shot. Faces are fully in frame.
    e. TIMELINE: the video beat by beat, each beat with its start and end time in seconds: what we see, the shot and camera move, the action, the place and light, and the sound in that moment. Cuts are as fast or as slow as the idea needs.
    f. WORDS: every spoken line and every word on screen that the concept calls for, exactly, with who says it and how, and where and how words appear.
-   g. SOUND: the music (mood, tempo, instruments, how it builds), the voice (gender, age, accent and tone that fit the brand and the language) and the sound effects. The music is always new and original: describe it only by mood, tempo and instruments, never by a song, artist, film, genre-famous track or another brand's video, and never ask to copy or remake existing music (the video model rejects audio that sounds like copyrighted music).
+   g. SOUND: the music (mood, tempo, instruments, how it builds), the voice (gender, age, accent and tone that fit the brand and the language) and the sound effects. New music is described only by mood, tempo and instruments, never by a song, artist, film, genre-famous track or another brand's video, and never as a copy or remake of existing music (the video model rejects audio that sounds like copyrighted music).
    h. LOGO: only when the brand's logo is attached: where it sits and how it looks for the whole video.
    i. THE ENDING: the last shot and the call to action.
    j. A closing line telling the model that the timeline is the plan, not a fixed script: it may improve shots, camera, transitions and timing where that makes a better ad, keeping the style, the real product or work, the brand, the facts and the words.
@@ -72,8 +75,9 @@ PROCEDURE
 5. Write the post text for each platform, the title and the call to action.
 
 OUTPUT
-Return JSON only: { "concept": string, "alternatives": [string, string], "title": string, "hook": string, "message": string, "durationSec": number, "videoPrompt": string, "ctaLabel": string, "captions": { "<platform>": string } }.
+Return JSON only: { "concept": string, "alternatives": [string, string], "title": string, "hook": string, "message": string, "durationSec": number, "videoPrompt": string, "ctaLabel": string, "captions": { "<platform>": string }, "music": "similar" | "new", "musicWhy": string }.
 "concept" is the chosen concept in 3–6 sentences; "alternatives" the two you didn't choose, one line each.
+"music" (only with a reference video): "similar" when you made music like the reference's, "new" when you chose another kind; otherwise "new". "musicWhy": one sentence on that choice ("" without a reference video).
 The video prompt is detailed: usually 2,500 to 8,000 characters, never more than 18,000.
 
 SELF-CHECK
@@ -102,6 +106,13 @@ export interface DirectVideoInput {
   recent: string[];
 }
 
+/**
+ * Copy a video: the reference's own track is never used (copyright). The writer judges its music from the breakdown
+ * and either describes new music like it or, when another kind suits this brand and video better, new music of that kind.
+ */
+const REFERENCE_MUSIC_RULE =
+  `always new original music; the reference's own track is never used, copied or remade. Judge the reference's music from its breakdown (Sound). When that kind of music is good and suits this brand, what is sold and the new video best ("music": "similar"), describe new music like it: the same mood, tempo, energy, instruments and changes, cut on the same beats. When another kind would suit this brand and video better (the reference's music is weak, off-brand, mostly speech or noise, there is none, or it doesn't suit the owner's changes), choose "new" and describe the music that suits this video best.`;
+
 export function directVideoPrompt(i: DirectVideoInput): string {
   return [
     i.context,
@@ -114,7 +125,7 @@ export function directVideoPrompt(i: DirectVideoInput): string {
     `Length: 4 to 30 seconds, as long as the idea needs.`,
     i.recent.length ? `\nRECENT VIDEOS OF THIS BRAND (make this one clearly different: another setting, device and story)\n${i.recent.map((r) => `- ${r}`).join("\n")}\n` : "",
     `Post text for: ${i.platforms.map((p) => `${p.key} (${p.label}, at most ${p.captionMax} characters)`).join(", ")}`,
-    i.reference ? `\nREFERENCE VIDEO (the owner wants this same video made with their product or service: follow its scenes and their timing, shots, camera, pace, on-screen text and look. Speech: whoever speaks on camera in it speaks on camera in ours, lips in sync; a voice-over stays a voice-over; the words are new, written for this brand, with the same length, rhythm and tone. Music: new original music with the same mood, tempo, instruments and changes, cut on the same beats, never the same track. Only what is sold, the brand and the words are this business's. When the post's angle lists the owner's changes, make them: they come before the reference, and everything they don't touch follows it)\n${i.reference}` : "",
+    i.reference ? `\nREFERENCE VIDEO (the owner wants this same video made with their product or service: follow its scenes and their timing, shots, camera, pace, on-screen text and look. Speech: whoever speaks on camera in it speaks on camera in ours, lips in sync; a voice-over stays a voice-over; the words are new, written for this brand, with the same length, rhythm and tone. Music: ${REFERENCE_MUSIC_RULE} Only what is sold, the brand and the words are this business's. When the post's angle lists the owner's changes, make them: they come before the reference, and everything they don't touch follows it)\n${i.reference}` : "",
   ]
     .filter(Boolean)
     .join("\n");

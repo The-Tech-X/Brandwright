@@ -498,7 +498,7 @@ create table public.brand_assets (
   ),
   storage_key text not null, -- never a URL
   ai_description text,
-  -- What a video shows, from one Twelve Labs read: {duration, summary, moments: [...]}; null for photos and
+  -- What a video shows, from one read by the video watcher: {duration, summary, moments: [...]}; null for photos and
   -- videos not watched yet
   analysis jsonb,
   tags text[] not null default '{}',
@@ -569,6 +569,8 @@ create table public.plan_items (
   -- "Copy a video" (reference_videos) and an ad the owner likes for an image ad (a tmp/ key, gone after 7 days)
   reference_video_id uuid,
   reference_image_key text,
+  -- Videos made by hand: the resolution the owner picked; null = the default (config/video-direct.ts, 480p)
+  video_resolution text check (video_resolution is null or video_resolution in ('480p', '720p')),
   brief jsonb,
   captions jsonb, -- {platform: text}
   rationale text,
@@ -971,6 +973,8 @@ insert into public.credit_prices (action, credits, label, sort) values
   ('text_post', 2, 'Text post', 100),
   ('video', 70, 'Video (up to 30 seconds)', 110),
   ('video_copy', 70, 'Copy a video', 120),
+  ('video_720p', 140, 'Video in 720p (up to 30 seconds)', 124),
+  ('video_copy_720p', 140, 'Copy a video in 720p', 126),
   ('social_account', 60, 'Social account (per month)', 130)
 on conflict (action) do nothing;
 

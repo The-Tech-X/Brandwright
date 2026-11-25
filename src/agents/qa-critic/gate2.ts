@@ -17,7 +17,7 @@ import { AppError } from "@/core/errors";
 // Agent 8 · QA Critic, Gate 2: checks the finished asset.
 // Code: size, text contrast, safe zones, caption length, video length and loudness.
 // AI: OpenAI vision for images (product matches the reference, no stray AI text, on brand);
-// Twelve Labs for video (hook in the first 3 seconds, scenes match the script, no glitches).
+// the video watcher for video (hook in the first 3 seconds, scenes match the script, no glitches).
 
 export interface Gate2Result {
   passed: boolean;
@@ -98,7 +98,7 @@ async function reviewVideo(brief: Brief, produced: Produced, track: (u: any) => 
 }
 
 /**
- * Words the image model painted into a scene's still (they carry into the clip). Twelve Labs can
+ * Words the image model painted into a scene's still (they carry into the clip). The video watcher can
  * miss them, so a vision model looks at the stills. A failed check never fails the video.
  */
 async function paintedTextScenes(produced: Produced, track: (u: any) => void): Promise<{ scenes: number[]; notes: string }> {

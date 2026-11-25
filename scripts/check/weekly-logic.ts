@@ -604,10 +604,12 @@ await check("direct image ad: everything the director reads goes to the image mo
   assert.ok(text.includes("Oven clean") && text.includes("price 89 EUR") && text.includes("Spotless oven") && text.includes("across Malta") && text.includes("Busy parent") && text.includes("warm natural light"));
   // No instructions about how the picture is made, no labels to cite, no layouts
   assert.ok(!/cite the label|LAYOUTS|\[O1\]|headline|layout/i.test(text), text);
-  const prompt = directPrompt(text + '\nContent pillar: One piece (sources: ["A2", "O1"]) (more)');
-  assert.ok(prompt.startsWith("Create one new ad image"));
+  const prompt = directPrompt(text + '\nContent pillar: One piece (sources: ["A2", "O1"]) (more)', true);
+  assert.ok(prompt.startsWith("Create one new ad image") && prompt.includes("and the brand's logo"));
   assert.ok(!prompt.includes("sources:") && prompt.includes("Content pillar: One piece (more)"), "research labels are stripped");
-  assert.ok(directPrompt("x".repeat(20000)).length < 12100);
+  // The owner chose no logo: none is attached, and the model is told not to draw one
+  assert.ok(directPrompt("x", false).includes("No logo goes on this ad") && !directPrompt("x", false).includes("the brand's logo"));
+  assert.ok(directPrompt("x".repeat(20000), true).length < 12100);
   assert.deepEqual(["1:1", "4:5", "9:16", "16:9"].map(gpt2Resolution), ["2K", "1K", "2K", "2K"]); // Kie's GPT Image 2 has 4:5 only at 1K
   assert.deepEqual(["1:1", "4:5", "9:16", "16:9"].map(openaiImageSize), ["1024x1024", "1088x1360", "1088x1936", "1936x1088"]);
   const brief = directBrief(full, "00000000-0000-4000-8000-000000000001");

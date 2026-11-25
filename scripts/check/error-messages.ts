@@ -32,7 +32,7 @@ async function failure(call: () => Promise<unknown>): Promise<{ message: string;
 
 async function main() {
   // Fake keys, so the adapters run here without the real ones; fetch is faked before any adapter loads
-  for (const name of ["OPENAI_API_KEY", "FIRECRAWL_API_KEY", "SCRAPECREATORS_API_KEY", "TWELVELABS_API_KEY", "ELEVENLABS_API_KEY", "KIE_API_KEY", "ZERNIO_API_KEY", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_BUCKET"]) {
+  for (const name of ["OPENAI_API_KEY", "FIRECRAWL_API_KEY", "SCRAPECREATORS_API_KEY", "KIE_API_KEY", "ZERNIO_API_KEY", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY", "R2_BUCKET"]) {
     process.env[name] ||= "test-key";
   }
   process.env.R2_ENDPOINT ||= "https://account.r2.cloudflarestorage.com";
@@ -46,8 +46,7 @@ async function main() {
   const openai = await import("@/providers/ai/openai");
   const firecrawl = await import("@/providers/crawl/firecrawl");
   const scrapecreators = await import("@/providers/social/scrapecreators");
-  const twelvelabs = await import("@/providers/video-understanding/twelvelabs");
-  const elevenlabs = await import("@/providers/ai/elevenlabs");
+  const watch = await import("@/providers/video-understanding/watch");
   const kie = await import("@/providers/ai/kie");
   const zernio = await import("@/providers/publishing/zernio");
   const r2 = await import("@/providers/storage/r2");
@@ -84,8 +83,8 @@ async function main() {
   });
 
   await check("jsonOrThrow: the vendor's reason from the body; a 2xx that isn't JSON is an error too", async () => {
-    const bad = await failure(() => jsonOrThrow("Twelve Labs", json({ code: "video_resolution_too_low", message: "Resolution too low" }, 400), undefined, "watching a.com/v.mp4"));
-    assert.equal(bad.message, 'Twelve Labs (watching a.com/v.mp4) didn\'t accept the request (400 Bad Request): "Resolution too low [video_resolution_too_low]".');
+    const bad = await failure(() => jsonOrThrow("Kie", json({ code: "video_resolution_too_low", message: "Resolution too low" }, 400), undefined, "watching a.com/v.mp4"));
+    assert.equal(bad.message, 'Kie (watching a.com/v.mp4) didn\'t accept the request (400 Bad Request): "Resolution too low [video_resolution_too_low]".');
     const html = await failure(() => jsonOrThrow("Firecrawl", new Response("<html><title>Just a moment</title></html>", { status: 200 })));
     assert.match(html.message, /Firecrawl sent a reply that isn't JSON: "Just a moment"/);
   });
@@ -277,19 +276,17 @@ async function main() {
     assert.match((await failure(() => scrapecreators.googleSearch("royal gypsy kaftans"))).message, /^ScrapeCreators \(google search, royal gypsy kaftans\) is out of credit \(402 Payment Required\): "Not enough credits"/);
   });
 
-  await check("Twelve Labs: documented codes in plain words with its own message; a cut-off or unreadable answer says so", async () => {
-    reply = () => json({ code: "video_duration_too_short", message: "The video is shorter than 4 seconds." }, 400);
-    const short = await failure(() => twelvelabs.analyze("https://cdn.a.com/v.mp4", "x"));
-    assert.equal(short.message, 'Twelve Labs (watching cdn.a.com/v.mp4): the video is too short to watch (400 Bad Request, video_duration_too_short): "The video is shorter than 4 seconds.".');
-    assert.deepEqual([short.type, short.retryable], ["INVALID_INPUT", false]);
-    reply = () => json({ code: "workload_allowance_exhausted", message: "Allowance used." }, 422);
-    assert.equal((await failure(() => twelvelabs.analyze("https://cdn.a.com/v.mp4", "x"))).type, "OUT_OF_CREDIT");
-    reply = () => json({ code: "too_many_requests", message: "Try again later" }, 429, { "retry-after": "40" });
-    assert.equal((await failure(() => twelvelabs.analyze("https://cdn.a.com/v.mp4", "x"))).retryAfterMs, 40_000);
-    reply = () => json({ id: "a", data: '{"moments":[', finish_reason: "length" });
-    assert.match((await failure(() => twelvelabs.analyze("https://cdn.a.com/v.mp4", "x"))).message, /the answer was cut off at the length limit/);
-    reply = () => json({ id: "a", data: "not json at all", finish_reason: "stop" });
-    assert.match((await failure(() => twelvelabs.analyze("https://cdn.a.com/v.mp4", "x"))).message, /answered, but not in valid JSON: "not json at all"/);
+  await check("Watching a video: the download, the size cap and a file that isn't a video each say what happened (ffmpeg runs for real)", async () => {
+    reply = () => new Response("gone", { status: 404 });
+    const missing = await failure(() => watch.analyze("https://cdn.a.com/v.mp4", "x"));
+    assert.match(missing.message, /^The video host \(downloading cdn\.a\.com\/v\.mp4 to watch it\) found nothing there \(404 Not Found\)/);
+    assert.deepEqual([missing.type, missing.retryable], ["INVALID_INPUT", false]);
+    reply = () => new Response("x", { headers: { "content-length": String(400 * 1024 * 1024) } });
+    assert.match((await failure(() => watch.analyze("https://cdn.a.com/v.mp4", "x"))).message, /is 400 MB; videos up to 300 MB can be watched/);
+    reply = () => new Response("this is not a video at all");
+    const broken = await failure(() => watch.analyze("https://cdn.a.com/v.mp4", "x"));
+    assert.match(broken.message, /^ffmpeg \(watching cdn\.a\.com\/v\.mp4\) found no video in the file/);
+    assert.deepEqual([broken.type, broken.retryable], ["INVALID_INPUT", false]);
   });
 
   await check("retries: only what can change is retried; database rules, a database behind schema.sql, code bugs and wrong shapes stop at once", async () => {
@@ -343,25 +340,13 @@ async function main() {
     assert.ok((stop as unknown as Error).name === "NonRetriableError" && stop.message === replayed.message, "optional() rethrows it as a stop, type kept");
     // A service the agent can do without: carry on, and say what was skipped
     const skipped = new Skipped();
-    assert.equal(await optional(Promise.reject(new Error("[[OUT_OF_CREDIT]] Twelve Labs: the plan's allowance is used up.")), { anyError: true, failed: skipped.note("watching a video") }), null);
+    assert.equal(await optional(Promise.reject(new Error("[[OUT_OF_CREDIT]] Kie: the plan's allowance is used up.")), { anyError: true, failed: skipped.note("watching a video") }), null);
     assert.equal(await optional(Promise.reject(new Error("[[INVALID_INPUT]] a.com/old answered 404 Not Found when Firecrawl read it.")), { failed: skipped.note("reading a.com/old") }), null);
     assert.equal(
       skipped.after("Read 14 pages."),
-      "Read 14 pages. Skipped 2: watching a video (Twelve Labs: the plan's allowance is used up); reading a.com/old (a.com/old answered 404 Not Found when Firecrawl read it)."
+      "Read 14 pages. Skipped 2: watching a video (Kie: the plan's allowance is used up); reading a.com/old (a.com/old answered 404 Not Found when Firecrawl read it)."
     );
     assert.equal(new Skipped().after("Read 15 pages."), "Read 15 pages.");
-  });
-
-  await check("ElevenLabs: new (detail.code) and old (detail.status) replies, 422 lists, and a music suggestion", async () => {
-    reply = () => json({ detail: { type: "payment_required", code: "insufficient_credits", message: "Not enough credits.", status: "insufficient_credits" } }, 402);
-    const credit = await failure(() => elevenlabs.generateSpeech("Hello"));
-    assert.deepEqual([credit.message, credit.type], ['ElevenLabs: it\'s out of credit (402 Payment Required, insufficient_credits): "Not enough credits.".', "OUT_OF_CREDIT"]);
-    reply = () => json({ detail: { status: "voice_not_found", message: "A voice with that ID was not found." } }, 404);
-    assert.match((await failure(() => elevenlabs.generateSpeech("Hello"))).message, /^ElevenLabs: the voice isn't available any more; pick another voice \(404 Not Found, voice_not_found\)/);
-    reply = () => json({ detail: [{ loc: ["body", "text"], msg: "field required", type: "value_error.missing" }] }, 422);
-    assert.match((await failure(() => elevenlabs.generateSpeech("Hello"))).message, /didn't accept the request \(422 Unprocessable Content\): "body\.text: field required"/);
-    reply = () => json({ detail: { status: "bad_prompt", message: "Prompt names an artist.", data: { prompt_suggestion: "An upbeat pop track" } } }, 400);
-    assert.match((await failure(() => elevenlabs.generateMusic("like Taylor Swift", 20))).message, /rejected the music description .* It suggests: "An upbeat pop track"\.$/);
   });
 }
 

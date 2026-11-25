@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-// Social & Market Analyst: what makes a video work (Twelve Labs Pegasus reads the video itself).
+// Social & Market Analyst: what makes a video work (the video watcher reads its frames and sound together).
 
 export const videoAnalysisSchema = z.object({
   hook: z.string().trim().default(""),
@@ -13,7 +13,7 @@ export const videoAnalysisSchema = z.object({
 
 export type VideoAnalysis = z.infer<typeof videoAnalysisSchema>;
 
-/** JSON schema sent to Twelve Labs so the answer comes back in this shape. */
+/** JSON schema the video watcher answers in. */
 export const VIDEO_ANALYSIS_JSON_SCHEMA = {
   type: "object",
   properties: {

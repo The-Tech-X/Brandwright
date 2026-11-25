@@ -145,8 +145,8 @@ export interface OptionalOptions {
   /** Gets the exact reason when the work fails, e.g. skipped.note("reading a competitor's ads") */
   failed?: (message: string) => void;
   /**
-   * The agent can do without this service altogether (Zernio's account list, Twelve Labs watching
-   * videos): carry on even after an error about the whole account, like no credit or a wrong key.
+   * The agent can do without this service altogether (Zernio's account list):
+   *: carry on even after an error about the whole account, like no credit or a wrong key.
    */
   anyError?: boolean;
 }

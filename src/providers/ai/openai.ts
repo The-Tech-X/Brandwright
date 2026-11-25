@@ -256,6 +256,38 @@ export async function generateImage(
   }
 }
 
+/** One stretch of speech with its time in the sound track */
+export interface SpeechSegment {
+  start: number;
+  end: number;
+  text: string;
+  /** The model's own estimate that this stretch isn't speech (music it misheard as words) */
+  noSpeech: number;
+}
+
+/** The words spoken in a sound track (MP3), with the time of each stretch. */
+export async function transcribe(audio: Buffer, seconds: number, what: string): Promise<Result<SpeechSegment[]>> {
+  const model = MODELS.transcribe;
+  try {
+    const res = await getClient().audio.transcriptions.create({
+      model,
+      file: await toFile(audio, "sound.mp3", { type: "audio/mpeg" }),
+      response_format: "verbose_json",
+      timestamp_granularities: ["segment"],
+    });
+    const segments = (res.segments ?? []).map((s) => ({ start: s.start, end: s.end, text: s.text.trim(), noSpeech: s.no_speech_prob })).filter((s) => s.text);
+    return { data: segments, usage: { provider: "openai", model, costUsd: (PRICING.openaiTranscribePerMinute * seconds) / 60 } };
+  } catch (err) {
+    const e = toAppError(err);
+    throw new AppError(`${e.message.replace(/\.$/, "")} (${what}).`, e.type, e.retryable, e.retryAfterMs);
+  }
+}
+
+/** A sound track (MP3) heard by the audio model, which answers the prompt in words. */
+export async function listen(audio: Buffer, prompt: string): Promise<Result<string>> {
+  return chat([{ role: "user", content: [{ type: "text", text: prompt }, { type: "input_audio", input_audio: { data: audio.toString("base64"), format: "mp3" } }] }], MODELS.listen);
+}
+
 export async function embed(inputs: string[]): Promise<Result<number[][]>> {
   const model = MODELS.embed;
   const started = Date.now();

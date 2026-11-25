@@ -1,9 +1,8 @@
 import * as OpenAI from "./openai";
 import * as Kie from "./kie";
-import * as ElevenLabs from "./elevenlabs";
 import * as Firecrawl from "@/providers/crawl/firecrawl";
 import * as ScrapeCreators from "@/providers/social/scrapecreators";
-import * as TwelveLabs from "@/providers/video-understanding/twelvelabs";
+import * as Watch from "@/providers/video-understanding/watch";
 
 // One entry point per task. Jobs, routes and agents call `ai`, never a vendor file.
 // Every paid call returns { data, usage } so agents can log cost.
@@ -32,12 +31,9 @@ export const ai = {
     resultUrl: Kie.resultUrlOrThrow,
   },
 
-  voice: ElevenLabs.generateSpeech,
-  voices: ElevenLabs.listVoices,
-  music: ElevenLabs.generateMusic,
-  languageCode: ElevenLabs.languageCode,
 
-  analyzeVideo: TwelveLabs.analyze,
+  /** Watches a video ourselves: frames and sound by the bundled ffmpeg, read by OpenAI (vision, audio, speech) */
+  analyzeVideo: Watch.analyze,
 
   crawl: {
     map: Firecrawl.map,
@@ -69,5 +65,4 @@ export const ai = {
 };
 
 export type { KieAspectRatio, TaskStatus } from "./kie";
-export type { Speech, Voice, VoiceFilters, VoicePage } from "./elevenlabs";
 export type { AdCreative, LibraryAd, LibraryPage, SocialPost, SocialProfile, WebResult } from "@/providers/social/types";

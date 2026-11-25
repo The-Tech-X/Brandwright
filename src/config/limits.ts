@@ -3,6 +3,10 @@ export const LIMITS = {
   imageMaxBytes: 10 * 1024 * 1024,
   referenceImageMaxBytes: 5 * 1024 * 1024,
   videoMaxBytes: 100 * 1024 * 1024,
+  /** A video downloaded to be watched (the client's, a competitor's or a reference); kept in the job's temp folder */
+  watchVideoMaxBytes: 300 * 1024 * 1024,
+  /** Sound listened to and transcribed per video; longer videos are read for their first 10 minutes */
+  watchSoundMaxSec: 600,
   descriptionMaxChars: 1500,
   /** Products or services a business can have; each one costs image and video work every week */
   offeringsMax: 15,

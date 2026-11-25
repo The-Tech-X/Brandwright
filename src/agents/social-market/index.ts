@@ -28,7 +28,7 @@ import { fillSocialsFromWebsite } from "./website-socials";
 // Agent 3 · Social & Market Analyst
 // Learns what already works for the client and for competitors.
 // own posts (Zernio or public) → baselines (code) → competitors (find, read, summarise; brands the
-// client admires: posts only) → the client's reference links → videos (Twelve Labs) → hooks (AI) into hook_library
+// client admires: posts only) → the client's reference links → videos (frames and sound read by OpenAI) → hooks (AI) into hook_library
 
 const PARALLEL = 3;
 
@@ -315,8 +315,8 @@ export const socialMarketAnalyst = defineResearchAgent("social_market_analyst", 
           (r) =>
             `Watched ${r.source === "competitor" ? `a video from ${r.label}` : r.source === "reference" ? r.label : `a ${r.source === "own_top" ? "top" : "weak"} ${r.platform} video of yours`}: ${r.analysis.hookType || "hook"}, ${r.analysis.pacing} pacing`
         ),
-        // Watching videos is a bonus: no Twelve Labs credit mustn't stop the research
-        { failed: skipped.note(`watching ${video.label}`), anyError: true }
+        // Watching videos is a bonus: a video that can't be read mustn't stop the research
+        { failed: skipped.note(`watching ${video.label}`) }
       )
     )
   ).filter((v): v is AnalyzedVideo => !!v);

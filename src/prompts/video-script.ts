@@ -2,7 +2,7 @@ import type { BusinessProfile } from "@/core/profile";
 import { buildProfileBlock } from "./profile-block";
 
 // Real narration pace for a 10-15 word line measures closer to ~5.5s than a
-// flat 4s once actually spoken by ElevenLabs — scenes are now sized to their
+// flat 4s once actually spoken aloud — scenes are now sized to their
 // own real narration length (not forced to a fixed 4s), so this is what
 // determines how many scenes a requested video duration actually needs.
 const SECONDS_PER_LINE = 5.5;

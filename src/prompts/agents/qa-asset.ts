@@ -3,7 +3,7 @@ import { clipOr, score10, textList } from "./lenient";
 import { REALISM_CHECKLIST, TRUTH } from "../knowledge";
 
 // QA Critic, Gate 2 (knowledge base §10.2): looks at the finished asset against the realism checklist
-// (§8.3, word for word) and the brand. Images and carousels with OpenAI vision, videos with Twelve Labs.
+// (§8.3, word for word) and the brand. Images and carousels with OpenAI vision, videos with the video watcher (frames and sound).
 // Both say whether a realistic AI-made person appears, so the post carries the platform's AI label.
 
 export const imageReviewSchema = z.object({
@@ -77,7 +77,7 @@ export interface VideoReview {
   summary: string;
 }
 
-/** JSON schema for Twelve Labs' structured answer. */
+/** JSON schema the video watcher answers in. */
 export const VIDEO_REVIEW_JSON_SCHEMA = {
   type: "object",
   properties: {

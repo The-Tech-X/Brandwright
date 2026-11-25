@@ -2,8 +2,8 @@ import { z } from "zod";
 
 // A video the owner wants made again for their own product, broken down the way an editor would:
 // every scene with its times, what it shows and how it is filmed, the words on screen and the words
-// said, the cut to the next scene, and the sound, pacing and look of the whole. Twelve Labs Pegasus
-// watches it once; the Creative Director then makes the same video with this business's product.
+// said, the cut to the next scene, and the sound, pacing and look of the whole. It is watched once
+// (ai.analyzeVideo: timed frames and timed sound together); the video writer then makes it with this business's product.
 
 const seconds = z.coerce.number().min(0).max(3600);
 const text = (max: number) => z.string().trim().max(max).catch("");
@@ -34,7 +34,7 @@ export const referenceVideoSchema = z.object({
   sound: z.object({ voice: text(240), music: text(240), effects: text(240) }).catch({ voice: "", music: "", effects: "" }),
   captions: text(240),
   ending: text(240),
-  /** Every spoken line with its time and who says it (Twelve Labs listens) */
+  /** Every spoken line with its time and who says it (from the timed speech recognition) */
   speech: z.array(z.object({ start: seconds, end: seconds, speaker: text(120), text: text(400) })).catch([]),
   scenes: z
     .array(z.unknown())
@@ -53,7 +53,7 @@ export type ReferenceVideo = z.infer<typeof referenceVideoSchema>;
 
 const STR = { type: "string" };
 
-/** JSON schema sent to Twelve Labs so the answer comes back in this shape. */
+/** JSON schema the video watcher answers in. */
 export const REFERENCE_VIDEO_JSON_SCHEMA = {
   type: "object",
   properties: {
@@ -107,51 +107,4 @@ Return:
 - speech: every spoken line in order, with start and end (seconds), speaker (who says it, and whether they speak on camera with their lips moving or as a voice-over) and text (the exact words); an empty list when nobody speaks.
 - scenes: every scene in order, one per cut, with no gaps, from the first frame to the last:
   start and end (seconds), shows (what is in the picture), shot (how close the camera is), camera (how it moves), people (who is in it and how they look, or "none"), action (what happens), onScreenText (the exact words shown, or ""), textPosition (where they sit on screen, or ""), textStyle (how they look and appear, or ""), spoken (the words said in this scene, or ""), transition (how it cuts to the next scene), purpose (what the scene does for the video).`;
-}
-
-/** What the frames show (OpenAI vision on timed contact sheets): the exact shots, the words on screen and the look. */
-export const referenceShotsSchema = z.object({
-  look: text(300),
-  captions: text(240),
-  ending: text(240),
-  scenes: referenceVideoSchema.shape.scenes,
-});
-export type ReferenceShots = z.infer<typeof referenceShotsSchema>;
-
-export function referenceShotsPrompt(duration: number, every: number, sheets: number): string {
-  return `The ${sheets} attached contact sheet${sheets === 1 ? "" : "s"} show one frame every ${every} seconds of a ${duration}-second social media video, in order (left to right, top to bottom, sheet after sheet), each frame labelled with its time.
-
-Break the video into scenes the way an editor logs a cut list: a new scene starts where the picture changes to a different shot. For each scene give:
-- start and end in seconds, from the frame times (the first starts at 0, the last ends at ${duration})
-- shows: what is in the picture
-- shot: how close the camera is
-- camera: how it moves (judge from the change between frames: push-in, pull-out, pan, tilt, still, handheld)
-- people: who is in it and how they look (hair, clothes, accessories, expression), or "none"
-- action: what happens
-- onScreenText: the exact words on screen, or ""
-- textPosition and textStyle: where those words sit and how they look, or ""
-- transition: how it changes to the next scene (cut, dissolve, wipe, match cut, whip)
-- purpose: what the scene does for the video
-- spoken: ""
-
-Also give: look (colours, light, set, styling and colour grade), captions (whether spoken words appear on screen as captions, their style and place, or "none") and ending (the last picture, an end card or a logo).
-
-Describe only what you see. Return JSON: { "look": string, "captions": string, "ending": string, "scenes": [{ "start": number, "end": number, "shows": string, "shot": string, "camera": string, "people": string, "action": string, "onScreenText": string, "textPosition": string, "textStyle": string, "spoken": string, "transition": string, "purpose": string }] }`;
-}
-
-/**
- * One breakdown from the two readings, each trusted only for what it does best, so the prompt writer never sees
- * two versions of the same thing: the frames give the shots, their times, the words on screen and the look;
- * Twelve Labs gives the summary, pacing and all the sound, and its spoken lines are placed in the scenes by time.
- */
-export function mergeReference(heard: ReferenceVideo, seen: ReferenceShots | null): ReferenceVideo {
-  if (!seen?.scenes.length) return heard;
-  const scenes = seen.scenes.map((s) => ({
-    ...s,
-    spoken: heard.speech
-      .filter((l) => l.start < s.end && l.end > s.start)
-      .map((l) => (l.speaker ? `${l.speaker}: ${l.text}` : l.text))
-      .join(" "),
-  }));
-  return { ...heard, look: seen.look || heard.look, captions: seen.captions || heard.captions, ending: seen.ending || heard.ending, scenes };
 }

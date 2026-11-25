@@ -5,7 +5,11 @@ export const PRICING = {
     // per 1M tokens
     "gpt-6.1-sol": { input: 2.0, output: 8.0 },
     "text-embedding-3-small": { input: 0.02, output: 0 },
+    // Audio input is billed per token too (about 10 tokens a second of sound); priced as audio throughout
+    "gpt-audio": { input: 32.0, output: 64.0 },
   } as Record<string, { input: number; output: number }>,
+  /** Speech-to-text, per minute of sound */
+  openaiTranscribePerMinute: 0.006,
   // OpenAI image model, per picture by quality (portrait size)
   openaiImage: { low: 0.02, medium: 0.07, high: 0.25, auto: 0.25 } as Record<string, number>,
   kie: {
@@ -16,16 +20,9 @@ export const PRICING = {
     /** Seedance 2.5, per second of video, with text and images only (kie.ai/seedance-2-5) */
     seedance25PerSecond: { "480p": 0.14, "720p": 0.315, "1080p": 0.79 },
   },
-  elevenlabs: {
-    voicePer1kChars: 0.06,
-    musicPerMinute: 0.5,
-  },
   firecrawl: { perPage: 0.001 },
   // Freelance pack: $47 for 25,000 credits
   scrapecreators: { perCredit: 0.00188 },
-  twelvelabs: {
-    analyzePerCall: 0.05,
-  },
 } as const;
 
 export function tokenCost(model: string, tokensIn: number, tokensOut: number): number {

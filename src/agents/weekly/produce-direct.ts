@@ -41,7 +41,8 @@ export async function produceDirect(
       const { ctx, usage } = await loadCreativeContext(db(), itemId);
       if (usage) track(usage);
       const theme = await loadTheme(db());
-      const logo = theme.logo.onLight ?? theme.logo.onDark;
+      // The logo only when the owner wants it on their posts (Settings → Content)
+      const logo = ctx.rules.showLogo ? (theme.logo.onLight ?? theme.logo.onDark) : null;
       // The product's own photos, or for a post about the brand a mix of the brand's and each product's (directPhotos).
       // ctx.assets has no videos, and no people photos when the owner chose none.
       const photos = directPhotos(ctx, MAX_PHOTOS);
@@ -66,7 +67,7 @@ export async function produceDirect(
       const colours = { primary: theme.primary.bg, accent: theme.accent.bg, heading: theme.fonts.heading, body: theme.fonts.body };
       const brief = directBrief(ctx, photos[0]?.id ?? null);
       await updateItem(db(), itemId, { brief, captions: brief.captions, hook_type: brief.hook.type, hook_text: brief.hook.text, framework: brief.framework, levers: [], status: "briefed", error: null });
-      return { prompt: directPrompt(directContext(ctx, colours, images)), refs: images.map((i) => i.url), brief, imageCount: images.length };
+      return { prompt: directPrompt(directContext(ctx, colours, images), !!logo), refs: images.map((i) => i.url), brief, imageCount: images.length };
     },
     (r) => `Gathered the business context and ${r.imageCount} image${r.imageCount === 1 ? "" : "s"} for the image model (no brief written by AI)`
   );

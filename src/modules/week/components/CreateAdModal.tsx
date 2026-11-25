@@ -25,6 +25,7 @@ import { useCreateAd } from "../hooks/usePlan";
 import { CreditAmount } from "@/components/kit/Credits";
 import { itemAction } from "@/core/credits/items";
 import { useCreditPrices } from "@/modules/insights/hooks/useInsights";
+import { DEFAULT_VIDEO_RESOLUTION, VideoQualityField } from "@/modules/library/components/create-content/VideoQualityField";
 
 /** The formats, plus copying a video the owner likes */
 type Choice = Format | "copy";
@@ -77,11 +78,12 @@ export function CreateAdModal({ open, onOpenChange, onCreated }: { open: boolean
   const [video, setVideo] = useState(EMPTY_VIDEO_TO_COPY);
   // Image ads: an ad the owner likes, made the same way
   const [liked, setLiked] = useState<Upload[]>([]);
+  const [resolution, setResolution] = useState(DEFAULT_VIDEO_RESOLUTION);
 
   const usable = useMemo(() => platforms.filter((p) => fits(made, p)), [platforms, made]);
   // What this post costs: the same rule the server charges by
   const { data: prices } = useCreditPrices();
-  const action = itemAction({ format: made, reference_image_key: made === "static" ? (liked[0]?.key ?? null) : null, reference_video_id: copying ? "copy" : null });
+  const action = itemAction({ format: made, reference_image_key: made === "static" ? (liked[0]?.key ?? null) : null, reference_video_id: copying ? "copy" : null, video_resolution: made === "video" ? resolution : null });
   const cost = prices?.find((p) => p.action === action)?.credits;
   const toggle = (p: string) => setPlatforms((list) => (list.includes(p) ? list.filter((x) => x !== p) : [...list, p]));
 
@@ -99,6 +101,7 @@ export function CreateAdModal({ open, onOpenChange, onCreated }: { open: boolean
       style: !copying && style !== AUTO && styles.some((s) => s.value === style) ? style : null,
       ...(copying ? videoToCopyInput(video) : { referenceVideoKey: null, referenceUrl: null }),
       referenceImageKey: made === "static" ? (liked[0]?.key ?? null) : null,
+      videoResolution: made === "video" ? resolution : null,
     });
     onCreated(item.id, item.slot_at);
     onOpenChange(false);
@@ -208,6 +211,8 @@ export function CreateAdModal({ open, onOpenChange, onCreated }: { open: boolean
             <Select value={styles.some((s) => s.value === style) ? style : AUTO} onValueChange={setStyle} options={styles} />
           </Field>
         )}
+
+        {made === "video" && <VideoQualityField value={resolution} onChange={setResolution} copying={copying} />}
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="Goes out on">

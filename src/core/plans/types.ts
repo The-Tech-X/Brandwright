@@ -73,6 +73,8 @@ export interface PlanItem {
   reference_video_id?: string | null;
   /** Image ads: an ad image the owner likes, made the same way for this business (a tmp/ key, gone after 7 days) */
   reference_image_key?: string | null;
+  /** Videos made by hand: the resolution picked; null = the default (480p) */
+  video_resolution?: string | null;
   funnel_stage: FunnelStage | null;
   objective: string | null;
   /** The Planner's strategy (knowledge base §7.4); null on plans made before it */

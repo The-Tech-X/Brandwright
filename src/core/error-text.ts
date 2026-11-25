@@ -96,7 +96,7 @@ export function vendorParts(body: any, text = ""): { message?: string; code?: st
     pick(body?.msg) ??
     pick(body?.failMsg) ??
     pick(body?.error_description);
-  // ElevenLabs moved from detail.status to detail.code; keep both
+  // Some services put the code in detail.code, older ones in detail.status; read both
   const code = pick(body?.error?.code) ?? pick(body?.code) ?? pick(body?.detail?.code) ?? pick(body?.detail?.status) ?? pick(body?.error?.type);
   const extra = pick(body?.details) ?? list(body?.details, (d) => pick(d?.message) ?? pick(d));
   const full = message && extra && !message.includes(extra) ? `${message} (${extra})` : message;

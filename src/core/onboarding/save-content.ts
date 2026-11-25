@@ -73,9 +73,7 @@ export async function saveContent(db: SupabaseClient, v: Content) {
       // The first goal is the main one; older code reads this column
       primary_goal: v.goals[0],
       posting_prefs: { platforms },
-      voice_id: v.voiceId,
       music_mood: v.musicMood,
-    },
-    { voiceName: v.voiceName }
+    }
   );
 }

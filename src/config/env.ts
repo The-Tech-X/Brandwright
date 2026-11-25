@@ -23,10 +23,8 @@ const serverSchema = z.object({
   EMBEDDING_MODEL: z.string().min(1).default("text-embedding-3-small"),
   EMBEDDING_DIMENSIONS: z.coerce.number().int().positive().default(1536),
   KIE_API_KEY: z.string().min(1).optional(),
-  ELEVENLABS_API_KEY: z.string().min(1).optional(),
 
   FIRECRAWL_API_KEY: z.string().min(1).optional(),
-  TWELVELABS_API_KEY: z.string().min(1).optional(),
   SCRAPECREATORS_API_KEY: z.string().min(1).optional(),
 
   ZERNIO_API_KEY: z.string().min(1).optional(),

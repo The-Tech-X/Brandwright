@@ -90,7 +90,7 @@ export const produceItem = inngest.createFunction(
 
     // A reference video for this post is broken down scene by scene (once) before the brief
     const referenceId = format === "video" ? await step.run("reference-video", async () => (await getItem(db(), itemId)).reference_video_id ?? null) : null;
-    if (referenceId) await studyReference(step, cd, db, businessId, referenceId);
+    if (referenceId) await studyReference(cd, db, referenceId);
 
     // ---------- Brief and Gate 1 ----------
     let brief: Brief | null = null;

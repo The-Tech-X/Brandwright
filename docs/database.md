@@ -43,7 +43,7 @@ The admin panel's logins: `user_id` PK → `auth.users` (cascade), `created_at`.
 ## Credits
 
 ### `credit_prices` — new
-What each action costs: `action` PK (`onboarding`, `brand_refresh`, `market_refresh`, `bible_regenerate`, `brand_video`, `week_plan`, `image_ad`, `image_ad_reference`, `carousel`, `text_post`, `video`, `video_copy`, `social_account`), `credits`, `label`, `sort`, `updated_at`. Every login reads it; only the server (the admin panel's Prices) changes it. Not per business.
+What each action costs: `action` PK (`onboarding`, `brand_refresh`, `market_refresh`, `bible_regenerate`, `brand_video`, `week_plan`, `image_ad`, `image_ad_reference`, `carousel`, `text_post`, `video`, `video_copy`, `video_720p`, `video_copy_720p`, `social_account`), `credits`, `label`, `sort`, `updated_at`. Every login reads it; only the server (the admin panel's Prices) changes it. Not per business.
 
 ### `credit_ledger` — new
 Every change to a balance: `id`, `business_id` (cascade), `kind` (`topup`: an admin added credits; `adjust`: an admin removed some; `charge`: an action used them; `refund`: a charge given back), `credits` (+ added, - taken), `balance` (after this row, never below 0), `action` (`credit_prices.action`; null for top-ups), `label` (what the client sees, e.g. "Image ad · Summer sale"), `ref_id` (the slot, plan, media item, research run or asset), `amount_usd` (what was paid for a top-up, optional), `note` (admins only), `key` (unique per business: the same key is charged once), `refund_of` → the charge a refund gives back (unique), `created_by` → the admin (`on delete set null`), `created_at`. A logged-in business reads its own rows, but not `note`, `key` or `created_by` (column grants); only the server writes them (no insert, update or delete grants).
@@ -76,7 +76,7 @@ The client's onboarding answers. Every agent reads it first.
 | `tone` | jsonb | Sliders 0–100: `formal`, `playful`, `bold`, `technical` |
 | `compliance` | jsonb | `{avoid_words, forbidden_claims, disclaimers}` — QA hard rule |
 | `posting_prefs` | jsonb | `{platforms: posts per week, formats}` |
-| `voice_id`, `music_mood` | text | Video defaults |
+| `voice_id`, `music_mood` | text | Video defaults: `music_mood` is the owner's music mood; `voice_id` is no longer used (it held a voice from a voice service that was removed) |
 | `onboarding` | jsonb | Wizard progress and answers with no column: `step` (furthest step), `area`, `areas`, `yearsInBusiness`, `faqs`, `voiceName`, `runId`, `submittedAt`, `scan` (website scan, see technical.md), `research` (brand research progress) |
 | `onboarding_status` | text | `not_started` → `collecting` → `analyzing` → `review` → `done` |
 | `updated_at` | timestamptz | |
@@ -159,7 +159,7 @@ Products and services in one table (replaces `business_profile.products`).
 
 - The client's own: `product_photo`, `team`, `location`, `work`, `person` (people who appear in posts), `general` (other own photos and videos). Ads use them directly or as reference images.
 - Other brands' posts the client likes (onboarding's "Reference posts and ads"): `reference_image`, `reference_video`. Studied for style and pacing, never used as the client's own. A video to copy for one post is a `reference_videos` row instead.
-- `analysis` (own videos only): `{duration, summary, orientation, moments: [{start, end, shows, shot, people, talking, product, quality, use, subject {x, y}, textArea, lines [{start, end, text}]}]}` from one Twelve Labs read; `{error}` when the video couldn't be read; null for photos and videos not watched yet. Partial index `idx_brand_assets_unwatched` finds the unwatched ones.
+- `analysis` (own videos only): `{duration, summary, orientation, moments: [{start, end, shows, shot, people, talking, product, quality, use, subject {x, y}, textArea, lines [{start, end, text}]}]}` from one read by the video watcher; `{error}` when the video couldn't be read; null for photos and videos not watched yet. Partial index `idx_brand_assets_unwatched` finds the unwatched ones.
 
 ### `reference_videos` — new
 Every video the owner gave to copy ("Copy a video"). A video someone liked enough to copy says something about what works, so its breakdown is kept for good, for later learning. The file is not kept.
@@ -218,6 +218,7 @@ The core table: one row per slot with every creative decision.
 | `pillar_id`, `persona_id`, `offering_id`, `offer_id` | uuid FKs | |
 | `funnel_stage`, `objective` | text | |
 | `reference_image_key` | text | Image ads: an ad image the owner likes, `tmp/<business id>/reference/<id>.<ext>`; sent to the image model with the rest of the context (direct image ads). Gone after 7 days, then a redo is made without it |
+| `video_resolution` | text | Videos made by hand: `480p` or `720p` (check). Null = the default, 480p (`config/video-direct.ts`); every planned and Auto-create video is null. 720p is charged as `video_720p` / `video_copy_720p` |
 | `reference_video_id` | uuid FK → `reference_videos` | A reference video for this post: its scene-by-scene breakdown is saved on that row's `analysis` and the video is made the same way for the product. Null for most posts |
 | `ad_objective`, `desire`, `awareness_level` | text | The Planner's strategy for the slot: what it is for, the one desire it taps, the audience's awareness. Null on older plans |
 | `angle`, `framework`, `hook_type`, `hook_text` | text | Tags the learning loop scores |
@@ -253,7 +254,7 @@ Every asset, made by an agent or by hand (`plan_item_id` null for manual).
 | `offering_id` | uuid | Replaces the `product` text column |
 | `variant_of` | uuid | Regenerated version of another row |
 | `creative_spec` | jsonb | Everything needed to regenerate. Manual "Other" product: `{product_name}` |
-| `video_analysis` | jsonb | Twelve Labs result |
+| `video_analysis` | jsonb | The video watcher's result |
 | `cost_usd` | numeric | Sum of vendor costs |
 
 ### `media_files` — new
@@ -344,7 +345,7 @@ Every one also includes `business_id` (`(col, business_id) → parent (id, busin
 
 ## File storage (Cloudflare R2, bucket `brandwright-media`)
 
-Files live in R2, not Supabase Storage (the schema makes no storage bucket). Public read by link (Kie, Zernio and Twelve Labs fetch files by URL). Only the server holds the R2 key: the browser uploads through a signed link made for a key in its own `<business id>/` folder; replacing and deleting is done by the server. Upload size limits are in `src/config/uploads.ts`.
+Files live in R2, not Supabase Storage (the schema makes no storage bucket). Public read by link (Kie, Zernio and our video watcher fetch files by URL). Only the server holds the R2 key: the browser uploads through a signed link made for a key in its own `<business id>/` folder; replacing and deleting is done by the server. Upload size limits are in `src/config/uploads.ts`.
 
 | Key | What | Rows |
 |---|---|---|

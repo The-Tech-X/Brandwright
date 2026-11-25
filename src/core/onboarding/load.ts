@@ -25,7 +25,6 @@ export interface OnboardingRaw {
   areas?: string;
   yearsInBusiness?: number | null;
   faqs?: string[];
-  voiceName?: string | null;
   submittedAt?: string;
   runId?: string;
   research?: import("./research").ResearchState;
@@ -138,8 +137,6 @@ export async function loadOnboarding(db: SupabaseClient): Promise<OnboardingDraf
       videoStyles: prefs.video_styles ?? [],
       people: prefs.people ?? null,
       peoplePhotos: assets.filter((a) => a.kind === "person").map(photo),
-      voiceId: p.voice_id,
-      voiceName: raw.voiceName ?? null,
       musicMood: p.music_mood ?? "upbeat",
       logo: prefs.logo ?? "every",
       ownMedia: assets.filter((a) => a.kind === "general").map(media),

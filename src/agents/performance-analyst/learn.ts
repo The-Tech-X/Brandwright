@@ -17,7 +17,7 @@ import { styleName } from "@/core/content/styles";
 // score every post of the last 90 days against the account's baseline (code) → learnings by
 // angle, hook type, format, framework, lever, pillar, persona and posting time, with client
 // rejections counted too (code) → hook scores and own winning hooks (code) → why the best and
-// worst videos did what they did (Twelve Labs, optional) → plain-English insights and the weekly
+// worst videos did what they did (watched by OpenAI, optional) → plain-English insights and the weekly
 // report (AI) → report emailed. The Planner reads the learnings on its next run.
 
 const WINDOW_DAYS = 90;
@@ -201,9 +201,8 @@ export const weeklyLearnings = inngest.createFunction(
           return notes;
         },
         (r) => `Looked at why ${r.length} videos did well or badly`
-      ),
-      // A bonus: no Twelve Labs credit mustn't stop the learnings
-      { anyError: true }
+      )
+      // A bonus: a video that can't be read mustn't stop the learnings
     );
 
     await task(

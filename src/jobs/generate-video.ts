@@ -22,7 +22,6 @@ import { MODELS } from "@/config/models";
 import { SCENE_LAYOUT_SYSTEM, sceneLayoutPrompt, sceneLayoutSchema } from "@/prompts/agents/scene-layout";
 import { copyToStorage } from "@/agents/producer/media";
 import { mediaKey, publicUrl, ratioName, workKey } from "@/providers/storage/paths";
-import { upload } from "@/providers/storage/r2";
 import { NonRetriableError } from "inngest";
 
 const MAX_IMAGE_POLLS = 12; // ~4.5 min
@@ -112,24 +111,8 @@ export const generateVideo = inngest.createFunction(
         .visual_prompts;
     });
 
-    // 3. Voice per line, so each scene knows its real spoken length
-    const voices = await run("generate-voice", async () => {
-      if (!media.voice_id) return null;
-      const result: { key: string; durationSec: number; words: { word: string; start: number; end: number }[] }[] = [];
-      for (let i = 0; i < script.length; i++) {
-        const { data } = await ai.voice(script[i], media.voice_id!, ai.languageCode(media.language));
-        const key = workKey(businessId, media.id, `voice-${i}.mp3`);
-        await upload(key, data.buffer, "audio/mpeg");
-        result.push({ key, durationSec: data.durationSec, words: data.words });
-      }
-      // Track the files so they are cleaned up with the media
-      await db.from("media_files").delete().eq("media_id", media.id).eq("role", "voice");
-      const { error } = await db
-        .from("media_files")
-        .insert(result.map((v, i) => ({ media_id: media.id, role: "voice", position: i, storage_key: v.key })));
-      if (error) throw error;
-      return result;
-    });
+    // 3. No recorded voice-over (no voice service): each scene keeps its planned length
+    const voices = null as { key: string; durationSec: number; words: { word: string; start: number; end: number }[] }[] | null;
 
     // 4. Scene images
     const images: SceneImage[] = await run("create-images", async () => {
@@ -200,9 +183,8 @@ export const generateVideo = inngest.createFunction(
     if (!clipsDone) throw new NonRetriableError("Making the scene clips took too long. Try again.");
 
     // 6. Our renderer draws the video (the same one as the agents' videos): clips copied into our
-    // storage, word-by-word captions from the voice, the brand's look, music, the closing card
+    // storage, the brand's look, the closing card
     const outputKey = mediaKey(businessId, media.id, `${ratioName(media.aspect_ratio || "9:16")}.mp4`);
-    const sceneDurations = clips.map((c) => c.targetDuration);
     const parts = await run("video-parts", async () => {
       const kept: { clip: string; still: string }[] = [];
       for (const c of clips) {
@@ -212,17 +194,8 @@ export const generateVideo = inngest.createFunction(
         await copyToStorage(c.imageUrl, still);
         kept.push({ clip, still });
       }
-      // Videos without a voice get a music bed so they aren't silent
-      let musicKey: string | null = null;
-      if (!voices) {
-        const total = sceneDurations.reduce((a, b) => a + b, 0) + 2.5;
-        const music = await ai.music("Upbeat, modern instrumental background music for a short social media video, no vocals.", Math.ceil(total)).catch(() => null);
-        if (music) {
-          musicKey = workKey(businessId, media.id, "music.mp3");
-          await upload(musicKey, music.data, "audio/mpeg");
-          await db.from("media_files").insert({ media_id: media.id, role: "music", storage_key: musicKey });
-        }
-      }
+      // No music service: the video keeps the sound effects only
+      const musicKey: string | null = null;
       // Where the subject is in each scene, so captions sit beside it
       const look = await ai
         .structured(sceneLayoutSchema, sceneLayoutPrompt(kept.length), { system: SCENE_LAYOUT_SYSTEM, images: kept.map((k) => publicUrl(k.still)), model: MODELS.vision })

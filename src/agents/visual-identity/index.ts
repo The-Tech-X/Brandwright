@@ -17,7 +17,7 @@ import { inGroups } from "@/agents/research/define";
 // website's design language (components, motifs, motion).
 // homepage design (Firecrawl) + logo (code) → colours and pairs (code) → homepage and two key pages (Firecrawl:
 // screenshots, and motion from the code) → style and design language (AI vision) → one line per photo (AI vision)
-// → the client's own videos watched for usable moments (Twelve Labs, new videos only)
+// → the client's own videos watched for usable moments (frames and sound read by OpenAI, new videos only)
 // When the onboarding scan already read the same website with the same logo, the kit is kept as it is.
 
 const MAX_PHOTOS = 4;
@@ -96,8 +96,8 @@ export const visualIdentityAnalyst = defineResearchAgent("visual_identity_analys
           },
           (a) => (a ? `Watched one of your videos: ${a.moments.length} usable moments${a.moments.some((m) => m.talking) ? ", with someone talking to camera" : ""}` : "Couldn't read one of your videos")
         ),
-        // Watching videos is a bonus: no Twelve Labs credit mustn't stop the brand kit
-        { failed: skipped.note("watching one of your videos"), anyError: true }
+        // Watching videos is a bonus: a video that can't be read mustn't stop the brand kit
+        { failed: skipped.note("watching one of your videos") }
       )
     )
   ).filter(Boolean).length;

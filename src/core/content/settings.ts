@@ -4,7 +4,7 @@ import { VIDEO_ONLY_PLATFORMS } from "@/core/onboarding/options";
 import type { ContentSettings, ContentSettingsDraft, OnboardingDraft } from "@/core/onboarding/schemas";
 import { ownRow } from "@/lib/supabase/own-row";
 
-// Settings → Content: the "Your content" answers from onboarding (mix, styles, people, voice, music,
+// Settings → Content: the "Your content" answers from onboarding (mix, styles, people, music,
 // logo) and where customers go. Saved to the same columns onboarding writes, so the weekly agents
 // (core/content/prefs.ts) pick the change up on their next run.
 
@@ -13,21 +13,16 @@ export interface ContentSettingsView {
   values: ContentSettingsDraft;
   /** Services get their own wording for the styles */
   service: boolean;
-  /** Content language, for the suggested voices */
-  language: string;
 }
 
 function pick({ content: c, basics: b }: OnboardingDraft): ContentSettingsView {
   return {
     service: c.businessType === "service",
-    language: b.language,
     values: {
       mix: c.mix,
       imageStyles: c.imageStyles,
       videoStyles: c.videoStyles,
       people: c.people,
-      voiceId: c.voiceId,
-      voiceName: c.voiceName,
       musicMood: c.musicMood,
       logo: c.logo,
       cta: b.cta,
@@ -62,7 +57,6 @@ export async function saveContentSettings(db: SupabaseClient, v: ContentSettings
     db.from("business_profile").update({
       content_prefs: prefs,
       posting_prefs: { ...(profile.posting_prefs ?? {}), platforms },
-      voice_id: v.voiceId,
       music_mood: v.musicMood,
       primary_cta: v.cta,
       cta_links: {
@@ -75,8 +69,5 @@ export async function saveContentSettings(db: SupabaseClient, v: ContentSettings
     })
   );
   if (error) throw error;
-  // The voice's name lives with the onboarding answers
-  const { error: nameError } = await db.rpc("merge_onboarding", { patch: { voiceName: v.voiceName } });
-  if (nameError) throw nameError;
   return getContentSettings(db);
 }

@@ -67,8 +67,8 @@ export type KnownErrors = Record<string, KnownError>;
 
 /**
  * The AppError for a vendor's documented code: our plain sentence first, then the status, the code
- * and the vendor's own words. "Twelve Labs (watching a.com/v.mp4): the video is too short to watch
- * (400 Bad Request, video_duration_too_short): "The minimum duration is 4 seconds."."
+ * and the vendor's own words. "ScrapeCreators (instagram profile, royalgypsy3): the profile or post is
+ * age-restricted, so it can't be read (403 Forbidden, forbidden): "Profile is age restricted"."
  */
 export function knownError(service: string, known: KnownError, code: string, opts: { status?: number; message?: string; what?: string; retryAfterSec?: number } = {}): AppError {
   const status = opts.status ? `${statusText(opts.status)}, ` : "";

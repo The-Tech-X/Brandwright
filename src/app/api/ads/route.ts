@@ -17,6 +17,7 @@ import { safeZone, weekStartOf, zonedParts } from "@/lib/zoned-time";
 import { inngest } from "@/jobs/client";
 import { assertVideoReady } from "@/providers/ffmpeg/client";
 import { assertItemCredits } from "@/core/credits/check";
+import { DIRECT_VIDEO, VIDEO_RESOLUTIONS } from "@/config/video-direct";
 
 const schema = z.object({
   format: z.enum(FORMATS),
@@ -36,6 +37,8 @@ const schema = z.object({
   referenceUrl: z.string().trim().min(5).max(2000).nullish(),
   /** Image ads: an ad the owner likes (a storage key the browser uploaded); the new ad is made the same way */
   referenceImageKey: z.string().trim().min(1).nullish(),
+  /** Videos: the resolution to make it in (720p costs more credits); default 480p */
+  videoResolution: z.enum(VIDEO_RESOLUTIONS).nullish(),
 });
 
 /**
@@ -91,8 +94,10 @@ export const POST = apiHandler(async (req: NextRequest) => {
   // A copied video follows the reference, not a content style
   const style = copying ? null : await styleFor(db, input.format, input.style);
   await assertStyleHasFacts(db, style, input.offeringId ?? null);
+  // Only a video has a resolution; the default is stored as null, like every planned video
+  const videoResolution = input.format === "video" && input.videoResolution && input.videoResolution !== DIRECT_VIDEO.resolution ? input.videoResolution : null;
   // Enough credits for this post before anything is downloaded or started (its run takes them)
-  await assertItemCredits(businessId, { format: input.format, reference_image_key: input.referenceImageKey, reference_video_id: copying ? "copy" : null });
+  await assertItemCredits(businessId, { format: input.format, reference_image_key: input.referenceImageKey, reference_video_id: copying ? "copy" : null, video_resolution: videoResolution });
 
   // A reference video: a reference_videos row linked to this post. Its breakdown is kept for good; the file
   // only waits in tmp/ while it's read
@@ -160,6 +165,7 @@ export const POST = apiHandler(async (req: NextRequest) => {
       status: "planned",
       ...(referenceVideoId ? { reference_video_id: referenceVideoId } : {}),
       ...(referenceImageKey ? { reference_image_key: referenceImageKey } : {}),
+      ...(videoResolution ? { video_resolution: videoResolution } : {}),
     })
     .select("id")
     .single();

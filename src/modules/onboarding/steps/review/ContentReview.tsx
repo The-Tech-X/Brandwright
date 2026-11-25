@@ -70,7 +70,6 @@ export function ContentReview() {
               <Thumbs items={c.peoplePhotos} />
             </Row>
           )}
-          {videos && sound.voice && <Row label="Voice-over">{c.voiceName ?? "No voice picked"}</Row>}
           {videos && sound.music && <Row label="Music mood">{labelOf(MUSIC_OPTIONS, c.musicMood)}</Row>}
           <Row label="Logo">{labelOf(LOGO_OPTIONS, c.logo)}</Row>
         </Rows>

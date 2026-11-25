@@ -14,7 +14,6 @@ import { BUSINESS_TYPE_OPTIONS, GOAL_OPTIONS, MUSIC_OPTIONS, STEP_META } from ".
 import { LOGO_OPTIONS, MIX_OPTIONS, PEOPLE_OPTIONS } from "./labels";
 import { PostingPlan } from "./PostingPlan";
 import { StylePicker } from "./StylePicker";
-import { VoicePicker } from "./VoicePicker";
 import { BrandsSection } from "./BrandsSection";
 
 /** Uploads that can be photos or videos remember which one they are. */
@@ -26,7 +25,6 @@ export function ContentStep() {
   const { value: v, update } = useSlice("content");
   const service = v.businessType === "service";
   const typeFromSite = useOnboarding((s) => s.draft.scan?.filled?.includes("businessType") ?? false);
-  const language = useOnboarding((s) => s.draft.basics.language);
   const set = (patch: Partial<typeof v>) => update("content", patch);
   const videos = v.mix !== "images";
   const sound = soundNeeds(v.videoStyles as VideoStyle[]);
@@ -87,17 +85,11 @@ export function ContentStep() {
         )}
       </Section>
 
-      {videos && (sound.voice || sound.music) && (
-        <Section
-          title="Voice and music for videos"
-          description={v.videoStyles.length ? "Only what your video styles use." : "Pick video styles above and we'll only ask what they need."}
-        >
-          {sound.voice && <VoicePicker language={language} value={{ voiceId: v.voiceId, voiceName: v.voiceName }} onChange={set} />}
-          {sound.music && (
-            <Field label="Music mood">
-              <Pills label="Music mood" options={MUSIC_OPTIONS} value={v.musicMood} onChange={(musicMood) => set({ musicMood })} />
-            </Field>
-          )}
+      {videos && sound.music && (
+        <Section title="Music for videos" description="The mood of the music in videos that have it. Voices are chosen to fit each video.">
+          <Field label="Music mood">
+            <Pills label="Music mood" options={MUSIC_OPTIONS} value={v.musicMood} onChange={(musicMood) => set({ musicMood })} />
+          </Field>
         </Section>
       )}
 

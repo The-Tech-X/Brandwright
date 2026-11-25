@@ -2,7 +2,7 @@ import { z } from "zod";
 
 // The client's own videos, logged like an editor would: the usable moments with times, what each
 // shows, whether someone speaks to camera (and what they say), where the subject is and where text
-// can go. Twelve Labs Pegasus reads the video itself. The Creative Director then picks moments for
+// can go. The video watcher reads its frames and sound together (ai.analyzeVideo). The Creative Director then picks moments for
 // scenes, and our renderer cuts them in and places text from these fields.
 
 export const MOMENT_SHOTS = ["close-up", "medium", "wide", "detail", "screen"] as const;
@@ -51,7 +51,7 @@ export type FootageAnalysis = z.infer<typeof footageSchema>;
 
 const ZONE = { type: "string", enum: [...ZONES] };
 
-/** JSON schema sent to Twelve Labs so the answer comes back in this shape. */
+/** JSON schema the video watcher answers in. */
 export const FOOTAGE_JSON_SCHEMA = {
   type: "object",
   properties: {

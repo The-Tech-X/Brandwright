@@ -6,11 +6,11 @@ import type { Usage } from "@/providers/usage";
 import { FOOTAGE_JSON_SCHEMA, footagePrompt, footageSchema, type FootageAnalysis } from "@/prompts/agents/footage";
 
 // The client's own videos (onboarding "your own photos and videos", Brand → Assets), watched once:
-// Twelve Labs logs the usable moments, saved on brand_assets.analysis. The Creative Director picks
+// The video watcher (ai.analyzeVideo: frames and sound) logs the usable moments, saved on brand_assets.analysis. The Creative Director picks
 // moments for scenes and the renderer cuts them in. Other brands' videos (reference_video) are
 // studied by the Social & Market Analyst instead and never used as footage.
 
-/** Videos watched per run (each one is a paid Twelve Labs call) */
+/** Videos watched per run (each one is a few paid OpenAI calls) */
 export const MAX_VIDEOS_PER_RUN = 6;
 
 const VIDEO = /\.(mp4|mov)$/i;
@@ -52,7 +52,7 @@ function tidy(a: FootageAnalysis): FootageAnalysis {
 }
 
 /**
- * Watches one video and saves what it shows. A video Twelve Labs can't read is saved with an
+ * Watches one video and saves what it shows. A video that can't be read is saved with an
  * error, so it isn't paid for again on every run.
  */
 export async function watchVideo(db: SupabaseClient, video: UnwatchedVideo, business: string): Promise<{ analysis: FootageAnalysis | null; usage: Usage | null }> {
@@ -64,8 +64,9 @@ export async function watchVideo(db: SupabaseClient, video: UnwatchedVideo, busi
     if (error) throw error;
     return { analysis, usage: res.usage };
   } catch (err) {
-    // A passing outage is tried again by the step; only a video that can't be read is set aside
-    if (err instanceof AppError && err.retryable) throw err;
+    // A passing outage is tried again by the step and an account-wide stop (no credit, wrong key) stops the agent;
+    // only a video that can't be read is set aside
+    if (err instanceof AppError && (err.retryable || err.type !== "INVALID_INPUT")) throw err;
     const message = err instanceof Error ? err.message.slice(0, 200) : "unreadable";
     await db.from("brand_assets").update({ analysis: { duration: 0, summary: "", orientation: "vertical", moments: [], error: message } }).eq("id", video.id);
     return { analysis: null, usage: null };

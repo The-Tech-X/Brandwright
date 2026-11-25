@@ -17,7 +17,8 @@ export const MODELS = {
   video: "bytedance/seedance-2-mini",
   /** A whole video in one go, with its own sound (direct video mode, config/video-direct.ts) */
   videoFull: "bytedance/seedance-2-5",
-  voice: "eleven_flash_v2_5",
-  music: "music_v1",
-  analyzeVideo: "pegasus1.5",
+  /** Speech in a video's sound track, with timestamps (needs a model that returns timed segments) */
+  transcribe: "whisper-1",
+  /** Listens to a video's sound track: speech, music, effects, and where they change */
+  listen: "gpt-audio",
 } as const;

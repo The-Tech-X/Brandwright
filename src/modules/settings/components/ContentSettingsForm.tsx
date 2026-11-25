@@ -13,12 +13,11 @@ import { soundNeeds, type ImageStyle, type VideoStyle } from "@/core/onboarding/
 import { CTA_OPTIONS, MUSIC_OPTIONS } from "@/modules/onboarding/config";
 import { LOGO_OPTIONS, MIX_OPTIONS, PEOPLE_OPTIONS } from "@/modules/onboarding/steps/content/labels";
 import { StylePicker } from "@/modules/onboarding/steps/content/StylePicker";
-import { VoicePicker } from "@/modules/onboarding/steps/content/VoicePicker";
 import { useContentSettings, useSaveContentSettings } from "../hooks/useContentSettings";
 
 /**
  * The "Your content" choices from onboarding, editable any time: images or videos, post styles,
- * people, voice and music, logo, and where customers go. The agents follow them from the next plan.
+ * people, music, logo, and where customers go. The agents follow them from the next plan.
  */
 export function ContentSettingsForm() {
   const { data, isLoading, error } = useContentSettings();
@@ -81,16 +80,11 @@ export function ContentSettingsForm() {
         </Field>
       </Card>
 
-      {videos && (sound.voice || sound.music) && (
-        <Card title="Voice and music for videos" description="Only what your video styles use.">
-          <div className="flex flex-col gap-5">
-            {sound.voice && <VoicePicker language={data.language} value={{ voiceId: form.voiceId, voiceName: form.voiceName }} onChange={set} />}
-            {sound.music && (
-              <Field label="Music mood">
-                <Pills label="Music mood" options={MUSIC_OPTIONS} value={form.musicMood} onChange={(musicMood) => set({ musicMood })} />
-              </Field>
-            )}
-          </div>
+      {videos && sound.music && (
+        <Card title="Music for videos" description="The mood of the music in videos that have it. Voices are chosen to fit each video.">
+          <Field label="Music mood">
+            <Pills label="Music mood" options={MUSIC_OPTIONS} value={form.musicMood} onChange={(musicMood) => set({ musicMood })} />
+          </Field>
         </Card>
       )}
 

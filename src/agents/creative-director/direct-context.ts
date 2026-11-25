@@ -151,9 +151,11 @@ export function directContext(ctx: CreativeContext, colours: DirectColours | nul
   return lines.join("\n");
 }
 
-/** What goes to the image model: one plain request, then everything above. */
-export const DIRECT_REQUEST =
-  "Create one new ad image for this business's post, based on the details below. The attached images are references for the real products (or the business's own place, team or work) and the brand's logo: make a new picture, not a collage of them.";
+/** What goes to the image model: one plain request, then everything above. The logo is attached only when the owner wants it. */
+export const directRequest = (logo: boolean) =>
+  logo
+    ? "Create one new ad image for this business's post, based on the details below. The attached images are references for the real products (or the business's own place, team or work) and the brand's logo: make a new picture, not a collage of them."
+    : "Create one new ad image for this business's post, based on the details below. The attached images are references for the real products (or the business's own place, team or work): make a new picture, not a collage of them. No logo goes on this ad: don't draw one.";
 
 /** Kie's prompt box is large but not endless; the context rarely comes near this. */
 const MAX_PROMPT = 12_000;
@@ -161,8 +163,8 @@ const MAX_PROMPT = 12_000;
 /** The research labels the Brand Bible keeps for itself: "(sources: ["A2", "O1"])" means nothing to a picture */
 const withoutSources = (text: string) => text.replace(/\s*\(sources: \[[^\]]*\]\)/g, "");
 
-export function directPrompt(context: string): string {
-  const text = withoutSources(`${DIRECT_REQUEST}\n\n${context}`);
+export function directPrompt(context: string, logo: boolean): string {
+  const text = withoutSources(`${directRequest(logo)}\n\n${context}`);
   return text.length > MAX_PROMPT ? `${text.slice(0, MAX_PROMPT).trimEnd()}…` : text;
 }
 

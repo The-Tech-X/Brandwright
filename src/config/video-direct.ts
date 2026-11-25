@@ -12,8 +12,14 @@ export const isDirectVideo = (format: string): boolean => format === "video" && 
  * Seedance 2.5 settings. On Kie 720p costs about $0.315 per second of video (a 30-second video about $9.45),
  * 480p $0.14 and 1080p $0.79 per second. Every platform gets the one vertical video.
  */
+/** What the owner can pick when making a video by hand (plan_items.video_resolution); 720p costs its own credits */
+export const VIDEO_RESOLUTIONS = ["480p", "720p"] as const;
+export type VideoResolution = (typeof VIDEO_RESOLUTIONS)[number];
+export const isVideoResolution = (v: unknown): v is VideoResolution => VIDEO_RESOLUTIONS.includes(v as VideoResolution);
+
 export const DIRECT_VIDEO = {
-  resolution: "480p" as "480p" | "720p" | "1080p",
+  /** Every video without a picked resolution (all of Auto-create and the weekly plan) */
+  resolution: "480p" as VideoResolution,
   aspectRatio: "9:16",
   minSeconds: 4,
   maxSeconds: 30,

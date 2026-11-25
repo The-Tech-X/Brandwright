@@ -8,10 +8,16 @@ export interface ItemForCredits {
   angle?: string | null;
   reference_image_key?: string | null;
   reference_video_id?: string | null;
+  /** Videos made by hand: 720p has its own price */
+  video_resolution?: string | null;
 }
 
 export function itemAction(item: ItemForCredits): CreditAction {
-  if (item.format === "video") return item.reference_video_id ? "video_copy" : "video";
+  if (item.format === "video") {
+    const hd = item.video_resolution === "720p";
+    if (item.reference_video_id) return hd ? "video_copy_720p" : "video_copy";
+    return hd ? "video_720p" : "video";
+  }
   if (item.format === "carousel") return "carousel";
   if (item.format === "text") return "text_post";
   return item.reference_image_key ? "image_ad_reference" : "image_ad";
@@ -21,7 +27,8 @@ const NAMES: Record<Format, string> = { static: "Image ad", carousel: "Carousel"
 
 /** "Video · Summer sale" (Copy a video says so) */
 export function itemLabel(item: ItemForCredits): string {
-  const name = item.format === "video" && item.reference_video_id ? "Copy a video" : NAMES[item.format];
+  const base = item.format === "video" && item.reference_video_id ? "Copy a video" : NAMES[item.format];
+  const name = item.format === "video" && item.video_resolution === "720p" ? `${base} (720p)` : base;
   const angle = item.angle?.trim();
   return angle ? `${name} · ${angle.length > 80 ? `${angle.slice(0, 79)}…` : angle}` : name;
 }
