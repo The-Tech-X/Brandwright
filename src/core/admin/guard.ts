@@ -4,7 +4,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { apiHandler } from "@/lib/api-handler";
 
-// Who may use the admin panel: logins in public.admins (0032), checked with is_admin() on every admin page
+// Who may use the admin panel: logins in public.admins, checked with is_admin() on every admin page
 // load and every admin API call (the middleware checks it too). Anyone else gets "not found", so the panel's
 // pages and routes don't even show they exist. Admin data is read with the service role only after this check.
 

@@ -62,7 +62,7 @@ export const VIDEO_STYLE_SOUND: Record<VideoStyle, "music" | "voice_music" | "vo
   slides: "music",
 };
 
-/** What the chosen video styles need. No styles picked = Prodo may use any, so both. */
+/** What the chosen video styles need. No styles picked = Brandwright may use any, so both. */
 export function soundNeeds(styles: readonly VideoStyle[]): { voice: boolean; music: boolean } {
   if (!styles.length) return { voice: true, music: true };
   const sounds = styles.map((s) => VIDEO_STYLE_SOUND[s]);

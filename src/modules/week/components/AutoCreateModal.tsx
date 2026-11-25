@@ -56,7 +56,7 @@ export function AutoCreateModal({ open, onOpenChange, onStarted }: { open: boole
       open={open}
       onOpenChange={onOpenChange}
       title="Auto-create posts"
-      description="Prodo chooses what to make from your brand, your content settings and what has worked, then makes each post. You only approve."
+      description="Brandwright chooses what to make from your brand, your content settings and what has worked, then makes each post. You only approve."
       className="w-[min(calc(100vw-32px),680px)]"
       footer={
         <div className="flex flex-wrap items-center justify-between gap-3">

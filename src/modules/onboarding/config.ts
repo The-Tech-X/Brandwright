@@ -160,7 +160,7 @@ export const MUSIC_OPTIONS: { value: MusicMood; label: string }[] = [
 export const AUTOPILOT_OPTIONS: { value: AutopilotMode; label: string; description: string }[] = [
   { value: "approve_each", label: "Approve each post", description: "You approve every post before it goes out." },
   { value: "approve_plan", label: "Approve the weekly plan", description: "Approve the week once; posts go out as planned." },
-  { value: "full", label: "Full autopilot", description: "Prodo posts by itself if you don't respond in time." },
+  { value: "full", label: "Full autopilot", description: "Brandwright posts by itself if you don't respond in time." },
 ];
 
 export const WEEKDAY_OPTIONS = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"].map((label, i) => ({

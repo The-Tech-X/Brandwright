@@ -70,7 +70,7 @@ export function NavLink({
 /** A group shown as one row that opens to its links. Open by itself on one of its pages; otherwise remembered per browser. */
 function CollapsibleGroup({ group, collapsed, onNavigate }: { group: NavGroup; collapsed: boolean; onNavigate?: () => void }) {
   const isActive = useIsActive();
-  const key = `prodo.nav.${group.label}`;
+  const key = `brandwright.nav.${group.label}`;
   const hasActive = group.items.some((i) => isActive(i.href));
   const [open, setOpen] = useState(false);
 

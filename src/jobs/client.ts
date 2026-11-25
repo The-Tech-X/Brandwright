@@ -64,7 +64,7 @@ type Events = {
   "plan-item/cancelled": ForBusiness<{ itemId: string }>;
 };
 
-const client = new Inngest({ id: "prodo", schemas: new EventSchemas().fromRecord<Events>() });
+const client = new Inngest({ id: "brandwright", schemas: new EventSchemas().fromRecord<Events>() });
 
 /** What a sent event starts, for the message when sending fails */
 const STARTS: Partial<Record<keyof Events, string>> = {

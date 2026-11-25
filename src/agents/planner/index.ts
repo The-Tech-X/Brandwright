@@ -47,7 +47,7 @@ export const planner = inngest.createFunction(
       if (!batch) await db.from("content_plans").update({ status: "failed", error: message }).eq("week_start", weekStart).eq("status", "planning");
       await notify(db, {
         kind: "agent_stopped",
-        title: batch ? "Prodo couldn't create your posts" : "Prodo couldn't plan the week",
+        title: batch ? "Brandwright couldn't create your posts" : "Brandwright couldn't plan the week",
         body: batch ? `Creating ${batch.static + batch.carousel + batch.video} post${batch.static + batch.carousel + batch.video === 1 ? "" : "s"} stopped: ${message}` : `The plan for the week of ${weekStart} stopped: ${message}`,
         link: "/week",
         email: true,

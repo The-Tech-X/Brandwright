@@ -19,7 +19,7 @@ export function DetailFacts({ media }: { media: MediaListItem }) {
   const isVideo = media.type === "video";
   // The content style it was made in (kept in the brief the post was made from); older and manual media have none
   const style = styleName((media.creative_spec as { style?: string | null } | null)?.style);
-  // A voice is only worth showing when one was actually picked: "Default" says nothing, and videos Prodo makes follow their style's sound
+  // A voice is only worth showing when one was actually picked: "Default" says nothing, and videos Brandwright makes follow their style's sound
   const voice = media.voice_name || (media.audio_style === "No Voice" ? "No voice" : null);
   return (
     <div className="flex flex-col gap-4">
@@ -32,7 +32,7 @@ export function DetailFacts({ media }: { media: MediaListItem }) {
         </Badge>
         {media.plan_item_id && (
           <Badge tone="primary" size="sm">
-            <Bot size={12} /> Made by Prodo
+            <Bot size={12} /> Made by Brandwright
           </Badge>
         )}
         {media.source === "uploaded" && <Badge size="sm">Uploaded</Badge>}

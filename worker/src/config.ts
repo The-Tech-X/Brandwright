@@ -10,7 +10,7 @@ function required(name: string): string {
 
 export const PORT = Number(process.env.PORT ?? 8080);
 export const SECRET = required("WORKER_SECRET");
-// Cloudflare R2, where Prodo keeps its files (an API token with read and write on the bucket)
+// Cloudflare R2, where Brandwright keeps its files (an API token with read and write on the bucket)
 export const R2_ENDPOINT = required("R2_ENDPOINT").replace(/\/$/, "");
 export const R2_ACCESS_KEY_ID = required("R2_ACCESS_KEY_ID");
 export const R2_SECRET_ACCESS_KEY = required("R2_SECRET_ACCESS_KEY");

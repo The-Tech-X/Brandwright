@@ -34,7 +34,7 @@ export function PerformancePage() {
       <PageHeader
         eyebrow="Insights"
         title="Performance"
-        description="How your posts do, and what Prodo learns from them for next week's plan."
+        description="How your posts do, and what Brandwright learns from them for next week's plan."
         actions={
           <>
             <Segmented label="Period" value={days} onChange={setDays} options={RANGES} />

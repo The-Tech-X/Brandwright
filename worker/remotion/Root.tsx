@@ -1,6 +1,6 @@
 // Every composition the worker renders.
-// - "ad": Prodo's video ads. One composition for every size: its length, width and height come
-//   from the Timeline Prodo sends (calculateMetadata), so 9:16 and 4:5 use the same code.
+// - "ad": Brandwright's video ads. One composition for every size: its length, width and height come
+//   from the Timeline Brandwright sends (calculateMetadata), so 9:16 and 4:5 use the same code.
 // - "check-<size>": a short test video that proves rendering works after a deploy.
 
 import type { CalculateMetadataFunction } from "remotion";

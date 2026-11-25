@@ -50,7 +50,7 @@ export function findSocialLinks(html: string): Partial<Record<SocialPlatform, st
 
 async function homepageHtml(website: string): Promise<string | null> {
   if (!/^https?:\/\//i.test(website)) return null;
-  const res = await request("The website", website, { headers: { "User-Agent": "Mozilla/5.0 (compatible; ProdoBot/1.0)", Accept: "text/html" } }, TIMEOUT_MS);
+  const res = await request("The website", website, { headers: { "User-Agent": "Mozilla/5.0 (compatible; BrandwrightBot/1.0)", Accept: "text/html" } }, TIMEOUT_MS);
   if (!res.ok || !(res.headers.get("content-type") ?? "").includes("html")) return null;
   return (await res.text()).slice(0, MAX_HTML_CHARS);
 }

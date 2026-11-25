@@ -46,7 +46,7 @@ export async function chargeAccountFee(businessId: string, accounts: number, mon
     await notify(businessDb(businessId), {
       kind: "credits_low",
       title: "Publishing is paused until credits are added",
-      body: `This month's fee for your ${fee.label.split(" · ")[0]} is ${formatCredits(credits)} credits and your balance is ${formatCredits(have)}. Posts wait until the Prodo team adds credits; everything else you made is kept.`,
+      body: `This month's fee for your ${fee.label.split(" · ")[0]} is ${formatCredits(credits)} credits and your balance is ${formatCredits(have)}. Posts wait until the Brandwright team adds credits; everything else you made is kept.`,
       link: "/credits",
       email: true,
       actionLabel: "See your credits",

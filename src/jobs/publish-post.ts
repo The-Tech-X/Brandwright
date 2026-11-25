@@ -61,7 +61,7 @@ export const publishPost = inngest.createFunction(
     await step.run("check-account-fee", async () => {
       const due = await collectFees(businessId);
       if (due) {
-        toInngestError(new AppError(`Publishing is paused: this month's fee for your social accounts (${formatCredits(due.credits)} credits) is still due. Ask the Prodo team to add credits, then post again.`, "NO_CREDITS", false));
+        toInngestError(new AppError(`Publishing is paused: this month's fee for your social accounts (${formatCredits(due.credits)} credits) is still due. Ask the Brandwright team to add credits, then post again.`, "NO_CREDITS", false));
       }
     });
 

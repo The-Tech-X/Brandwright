@@ -179,9 +179,9 @@ const DB_CODES: Record<string, string> = {
   "22P02": "a value has the wrong format",
   "22001": "a value is too long",
   "42501": "the database refused access to this row",
-  "42P01": "a table is missing (a migration hasn't been applied)",
-  "42703": "a column is missing (a migration hasn't been applied)",
-  "42883": "a database function is missing (a migration hasn't been applied)",
+  "42P01": "a table is missing (the database is behind supabase/schema.sql)",
+  "42703": "a column is missing (the database is behind supabase/schema.sql)",
+  "42883": "a database function is missing (the database is behind supabase/schema.sql)",
   "57014": "the query took too long and was stopped",
   "53300": "the database has too many connections open",
   "40001": "two changes clashed; trying again usually works",
@@ -195,10 +195,10 @@ const DB_CODES: Record<string, string> = {
   PGRST102: "the data sent was malformed",
   PGRST103: "the requested range of rows is invalid",
   PGRST116: "expected one row but found none or several",
-  PGRST200: "the database doesn't know how these tables link (a migration hasn't been applied)",
-  PGRST202: "the database doesn't know this function (a migration hasn't been applied)",
-  PGRST204: "the database doesn't know this column (a migration hasn't been applied)",
-  PGRST205: "the database doesn't know this table (a migration hasn't been applied)",
+  PGRST200: "the database doesn't know how these tables link (the database is behind supabase/schema.sql)",
+  PGRST202: "the database doesn't know this function (the database is behind supabase/schema.sql)",
+  PGRST204: "the database doesn't know this column (the database is behind supabase/schema.sql)",
+  PGRST205: "the database doesn't know this table (the database is behind supabase/schema.sql)",
   PGRST301: "the database refused our login token",
   PGRST302: "the request had no login token",
   PGRST303: "the login token has expired or isn't valid",
@@ -225,12 +225,12 @@ export function databaseMessage(err: DbErrorLike): string {
 
 /**
  * Whether trying again can fix a database error: yes for a busy, slow or dropped connection; no for
- * a broken rule (duplicate, missing link, bad value) or a missing table or column (a migration).
+ * a broken rule (duplicate, missing link, bad value) or a missing table or column (the database behind supabase/schema.sql).
  */
 function dbErrorKind(code: string): { type: ErrorType; retryable: boolean } {
   const busy = ["", "40001", "40P01", "53300", "57014", "PGRST000", "PGRST001", "PGRST002", "PGRST003"];
   if (busy.includes(code) || code.startsWith("08")) return { type: "PROVIDER_DOWN", retryable: true };
-  // Our setup is wrong (a migration not applied, a bad server key): every call fails until it's fixed
+  // Our setup is wrong (the database behind supabase/schema.sql, a bad server key): every call fails until it's fixed
   if (["42P01", "42703", "42883"].includes(code) || /^PGRST(2\d\d|30\d)$/.test(code)) return { type: "NOT_CONFIGURED", retryable: false };
   if (/^(2[23]|42|P0)/.test(code) || /^PGRST1\d\d$/.test(code)) return { type: "INVALID_INPUT", retryable: false };
   return { type: "PROVIDER_DOWN", retryable: true };

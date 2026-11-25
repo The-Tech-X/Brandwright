@@ -30,7 +30,7 @@ const clock = (s: number) => {
  * (speed, download) behind the three dots. Full screen shows speed and download in the bar itself. The
  * menu is drawn inside the player, so it still shows in full screen.
  */
-export function VideoPlayer({ src, className, videoClassName, fileName = "prodo-video" }: VideoPlayerProps) {
+export function VideoPlayer({ src, className, videoClassName, fileName = "brandwright-video" }: VideoPlayerProps) {
   const box = useRef<HTMLDivElement>(null);
   const video = useRef<HTMLVideoElement>(null);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);

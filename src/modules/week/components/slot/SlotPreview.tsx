@@ -52,7 +52,7 @@ function Design({ item, media }: { item: PlanItemView; media: PostMedia | undefi
   if (item.format === "video") {
     return (
       <div className={stage}>
-        <VideoPlayer src={publicUrl(media.storage_key)} className="h-full w-fit max-w-full shadow-ob-sm" videoClassName="h-full w-auto max-w-full object-contain" fileName={`prodo-video-${item.id.slice(0, 8)}`} />
+        <VideoPlayer src={publicUrl(media.storage_key)} className="h-full w-fit max-w-full shadow-ob-sm" videoClassName="h-full w-auto max-w-full object-contain" fileName={`brandwright-video-${item.id.slice(0, 8)}`} />
       </div>
     );
   }
@@ -73,7 +73,7 @@ function Design({ item, media }: { item: PlanItemView; media: PostMedia | undefi
           ))}
         </div>
         <span className="shrink-0 text-center text-xs text-ob-muted">Swipe or scroll to see every slide · click one to see it bigger</span>
-        <ImageLightbox images={slides} index={zoom} onIndexChange={setZoom} label="Carousel slide" fileName="prodo-slide" />
+        <ImageLightbox images={slides} index={zoom} onIndexChange={setZoom} label="Carousel slide" fileName="brandwright-slide" />
       </div>
     );
   }
@@ -98,7 +98,7 @@ function Design({ item, media }: { item: PlanItemView; media: PostMedia | undefi
           <img src={current.url} alt="The finished ad" className={fitted} />
         </button>
       </div>
-      <ImageLightbox images={[current.url]} index={zoom} onIndexChange={setZoom} label="The finished ad" fileName={`prodo-ad-${current.label.replace(":", "x")}`} />
+      <ImageLightbox images={[current.url]} index={zoom} onIndexChange={setZoom} label="The finished ad" fileName={`brandwright-ad-${current.label.replace(":", "x")}`} />
     </div>
   );
 }

@@ -34,7 +34,7 @@ export function addJob(request: JobRequest): string {
   return job.id;
 }
 
-/** What Prodo sees when it checks on a job. */
+/** What Brandwright sees when it checks on a job. */
 export function jobStatus(id: string) {
   const job = jobs.get(id);
   if (!job) return null;
@@ -51,7 +51,7 @@ export function load() {
 
 /** Each job gets its own temp folder, deleted afterwards whatever happens. */
 async function run(job: Job): Promise<void> {
-  const dir = await mkdtemp(join(tmpdir(), "prodo-"));
+  const dir = await mkdtemp(join(tmpdir(), "brandwright-"));
   try {
     if (job.kind === "ffmpeg") await runFfmpegJob(job.input, dir);
     else await runRender(job.input, dir);

@@ -42,7 +42,7 @@ const ass = buildAss({
     { word: "for", start: 3.0, end: 3.2 },
     { word: "you.", start: 3.2, end: 3.8 },
   ],
-  overlays: [{ text: "Prodo test", start: 0, end: 2 }],
+  overlays: [{ text: "Brandwright test", start: 0, end: 2 }],
   font: "Inter",
   highlight: "#ffd166",
   highlightText: "#111111",

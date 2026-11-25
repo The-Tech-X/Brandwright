@@ -14,7 +14,7 @@ const outputKey = `tmp/smoke/render-check-${Date.now()}.mp4`;
 const start = await fetch(`${url}/render`, {
   method: "POST",
   headers,
-  body: JSON.stringify({ template: "check-9x16", props: { title: "Prodo renders work", color: "#2f45c5", image: null }, outputKey }),
+  body: JSON.stringify({ template: "check-9x16", props: { title: "Brandwright renders work", color: "#2f45c5", image: null }, outputKey }),
 });
 const { jobId, error } = await start.json();
 if (!jobId) throw new Error(`Render refused: ${error}`);

@@ -12,7 +12,7 @@ export type CheckProps = {
   image?: string | null;
 };
 
-export const checkDefaults: CheckProps = { title: "Prodo renders work", color: "#2f45c5", image: null };
+export const checkDefaults: CheckProps = { title: "Brandwright renders work", color: "#2f45c5", image: null };
 
 export function Check({ title, color, image }: CheckProps) {
   const frame = useCurrentFrame();

@@ -48,3 +48,6 @@ next-env.d.ts
 
 # Video worker: bundled templates (built inside Docker)
 worker/bundle/
+
+# Claude Code local settings
+.claude/settings.local.json

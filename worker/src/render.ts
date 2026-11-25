@@ -11,7 +11,7 @@ import { runFfmpeg } from "./ffmpeg.ts";
 const LOUDNESS = "loudnorm=I=-14:TP=-1.5:LRA=11";
 
 export interface RenderInput {
-  /** Composition id: "ad" (Prodo's video ads, any size) or "check-9x16" */
+  /** Composition id: "ad" (Brandwright's video ads, any size) or "check-9x16" */
   template: string;
   props: Record<string, unknown>;
   outputKey: string;

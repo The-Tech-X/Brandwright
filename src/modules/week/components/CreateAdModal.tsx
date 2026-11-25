@@ -190,7 +190,7 @@ export function CreateAdModal({ open, onOpenChange, onCreated }: { open: boolean
               <Select
                 value={personaId}
                 onValueChange={setPersonaId}
-                options={[{ value: NONE, label: "Let Prodo choose" }, ...(personas ?? []).filter((p) => p.active !== false).map((p) => ({ value: String(p.id), label: String(p.name) }))]}
+                options={[{ value: NONE, label: "Let Brandwright choose" }, ...(personas ?? []).filter((p) => p.active !== false).map((p) => ({ value: String(p.id), label: String(p.name) }))]}
               />
             </Field>
           </div>

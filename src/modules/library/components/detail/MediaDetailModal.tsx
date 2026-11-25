@@ -92,7 +92,7 @@ export function MediaDetailModal({ media, onClose, onCreatePost, onRetry }: Medi
       </button>
       <div className="flex flex-wrap gap-2">
         {media.storage_key && (
-          <button type="button" className={button({ variant: "secondary", size: "sm" })} onClick={() => downloadFile(publicUrl(media.storage_key!), `prodo-${media.type}-${media.id.slice(0, 8)}`)}>
+          <button type="button" className={button({ variant: "secondary", size: "sm" })} onClick={() => downloadFile(publicUrl(media.storage_key!), `brandwright-${media.type}-${media.id.slice(0, 8)}`)}>
             <Download size={15} /> Download
           </button>
         )}

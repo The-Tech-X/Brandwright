@@ -1,5 +1,5 @@
 // A small Timeline with brand colours only (no files), so the Studio opens on something and a
-// render can be checked without any media. Prodo sends real ones.
+// render can be checked without any media. Brandwright sends real ones.
 
 import { FPS, type Timeline } from "../shared/timeline.ts";
 
@@ -23,7 +23,7 @@ export const sampleTimeline: Timeline = {
     body: "DejaVu Sans",
     fonts: [],
     logo: null,
-    businessName: "Prodo",
+    businessName: "Brandwright",
   },
   safe: { top: 260, right: 120, bottom: 600, left: 90 },
   scenes: [
@@ -40,7 +40,7 @@ export const sampleTimeline: Timeline = {
     { kind: "title", role: "hook", size: "xl", zone: "middle", startFrame: 0, durationFrames: s(2.9), words: [{ text: "Videos", emphasis: false }, { text: "that", emphasis: false }, { text: "sell", emphasis: true }] },
     { kind: "stat", value: 4.9, decimals: 1, prefix: "", suffix: "★", label: "from 120 reviews", zone: "middle", startFrame: s(3.2), durationFrames: s(3) },
     { kind: "sticker", emoji: "🔥", x: 0.76, y: 0.32, size: 0.16, startFrame: s(3.6), durationFrames: s(1.6) },
-    { kind: "endCard", cta: "Book now", line: "Made by Prodo", link: "prodo.app", startFrame: s(6.5) - 12, durationFrames: s(5) + 12 },
+    { kind: "endCard", cta: "Book now", line: "Made by Brandwright", link: "brandwright.app", startFrame: s(6.5) - 12, durationFrames: s(5) + 12 },
   ],
   audio: { voice: [], music: null, sfx: [] },
   logoBug: null,

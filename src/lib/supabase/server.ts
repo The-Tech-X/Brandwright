@@ -5,7 +5,7 @@ import { PICKED_BUSINESS_COOKIE, PICKED_BUSINESS_HEADER, TAB_BUSINESS_HEADER, is
 export async function createClient() {
   const [cookieStore, requestHeaders] = await Promise.all([cookies(), headers()]);
   // Which of the login's businesses this request is for: the tab's (API calls) or the one picked on this device
-  // (page loads). The database checks the login belongs to it (current_business_id(), migration 0030)
+  // (page loads). The database checks the login belongs to it (current_business_id())
   const tab = requestHeaders.get(TAB_BUSINESS_HEADER);
   const picked = cookieStore.get(PICKED_BUSINESS_COOKIE)?.value;
   const business: Record<string, string> = {

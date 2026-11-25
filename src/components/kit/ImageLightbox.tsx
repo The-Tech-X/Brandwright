@@ -21,7 +21,7 @@ interface ImageLightboxProps {
 const round = "absolute flex h-11 w-11 items-center justify-center rounded-full bg-ob-dark/60 text-ob-on-dark transition-colors hover:bg-ob-dark/80";
 
 /** A picture as big as the screen allows, inside the app. Click outside it, press Escape or use the close button to leave. */
-export function ImageLightbox({ images, index, onIndexChange, label = "Picture", fileName = "prodo-ad" }: ImageLightboxProps) {
+export function ImageLightbox({ images, index, onIndexChange, label = "Picture", fileName = "brandwright-ad" }: ImageLightboxProps) {
   const open = index !== null && !!images[index];
   const many = images.length > 1;
   const [saving, setSaving] = useState(false);

@@ -10,7 +10,7 @@ import { CTA_CHOICES, GOALS, IMAGE_STYLES, MUSIC_MOODS, VIDEO_STYLES } from "@/c
 export interface ContentRules {
   /** Ranked: the first one drives most posts */
   goals: Goal[];
-  /** null = not answered (Prodo picks a balanced mix) */
+  /** null = not answered (Brandwright picks a balanced mix) */
   mix: ContentMix | null;
   imageStyles: ImageStyle[];
   videoStyles: VideoStyle[];

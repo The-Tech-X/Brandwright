@@ -3,7 +3,7 @@ import { businessDb } from "@/lib/supabase/business";
 import { formatCredits, type CreditAction } from "@/config/credits";
 import { priceOf } from "./prices";
 
-// Taking and giving back a business's credits. The database does the sums (credit_* functions, 0032): it locks
+// Taking and giving back a business's credits. The database does the sums (credit_* functions): it locks
 // the business row, refuses to go below zero and charges each key once, so retries never charge twice.
 // Server only: these use the service role, limited to the one business.
 
@@ -22,7 +22,7 @@ export interface Charge {
 /** The plain message when the balance is too low; `what` is the action ("This video"). */
 export function noCredits(needed: number, have: number, what: string): AppError {
   return new AppError(
-    `Not enough credits: ${what} uses ${formatCredits(needed)} credit${needed === 1 ? "" : "s"} and ${have === 0 ? "none are" : `${formatCredits(have)} ${have === 1 ? "is" : "are"}`} left. Ask the Prodo team to add more.`,
+    `Not enough credits: ${what} uses ${formatCredits(needed)} credit${needed === 1 ? "" : "s"} and ${have === 0 ? "none are" : `${formatCredits(have)} ${have === 1 ? "is" : "are"}`} left. Ask the Brandwright team to add more.`,
     "NO_CREDITS",
     false
   );

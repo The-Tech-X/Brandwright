@@ -4,7 +4,7 @@ import { AppError } from "@/core/errors";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { removeFiles } from "@/providers/storage/remove-files";
 
-// One login, several businesses (business_members, migration 0030): the account menu's list, "Add account" (a new
+// One login, several businesses (business_members): the account menu's list, "Add account" (a new
 // business, or an existing one linked by signing in once with its own login) and removing one. The list lives on
 // the login, so it's the same on every device; which one is open is picked per device (lib/active-business.ts).
 // A business counts as added once its setup is finished (onboarding_status 'done': research done and the Brand

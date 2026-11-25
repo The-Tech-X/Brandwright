@@ -5,7 +5,7 @@ import type { PerformanceView } from "@/core/performance/dashboard";
 import { num } from "../../lib/format";
 import { Sparkline } from "../charts/Sparkline";
 
-/** Followers over time per account, and how many of Prodo's posts the client approved. */
+/** Followers over time per account, and how many of Brandwright's posts the client approved. */
 export function AudienceCard({ data }: { data: PerformanceView }) {
   const f = data.followers;
   const { approved, rejected } = data.approvals;
@@ -47,7 +47,7 @@ export function AudienceCard({ data }: { data: PerformanceView }) {
         )}
 
         <div className="flex flex-col gap-2 border-t border-ob-line pt-4">
-          <span className="text-[12px] font-bold uppercase tracking-[0.06em] text-ob-muted">Your yes to Prodo&apos;s posts</span>
+          <span className="text-[12px] font-bold uppercase tracking-[0.06em] text-ob-muted">Your yes to Brandwright&apos;s posts</span>
           {decided ? (
             <>
               <div className="flex items-baseline gap-2">

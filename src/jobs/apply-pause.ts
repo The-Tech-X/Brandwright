@@ -4,10 +4,10 @@ import { notify } from "@/core/notifications/notify";
 import { publisherFor } from "@/providers/publishing/registry";
 
 // The pause switch also holds posts already handed to the publishing provider: pausing takes them
-// back (they wait as drafts with their time kept); turning Prodo back on schedules the ones whose
+// back (they wait as drafts with their time kept); turning Brandwright back on schedules the ones whose
 // time hasn't passed and tells the client about the rest.
 
-export const HELD = "Held while Prodo was paused";
+export const HELD = "Held while Brandwright was paused";
 const MIN_LEAD_MS = 2 * 60_000;
 
 export const applyPause = inngest.createFunction(
@@ -58,7 +58,7 @@ export const applyPause = inngest.createFunction(
           await db.from("post_targets").update({ error: null }).eq("post_id", post.id);
           await db.from("posts").update({ status: "scheduled" }).eq("id", post.id);
         } else {
-          await db.from("post_targets").update({ error: "Its time passed while Prodo was paused. Pick a new time." }).eq("post_id", post.id);
+          await db.from("post_targets").update({ error: "Its time passed while Brandwright was paused. Pick a new time." }).eq("post_id", post.id);
         }
       });
       if (onTime) {
@@ -70,7 +70,7 @@ export const applyPause = inngest.createFunction(
       await step.run("tell-client", () =>
         notify(businessDb(businessId), {
           kind: "post_failed",
-          title: `${missed.length} ${missed.length === 1 ? "post" : "posts"} missed their time while Prodo was paused`,
+          title: `${missed.length} ${missed.length === 1 ? "post" : "posts"} missed their time while Brandwright was paused`,
           body: "They're waiting as drafts in Posts. Pick a new time for each.",
           link: "/posts",
           email: true,

@@ -44,7 +44,7 @@ export interface CreditsView {
 const PAGE = 1000;
 const MAX_PAGES = 20;
 
-// A logged-in client may read only these columns (0032): admins' notes stay with the admin panel
+// A logged-in client may read only these columns (supabase/schema.sql): admins' notes stay with the admin panel
 const CLIENT_COLUMNS = "id, kind, credits, balance, action, label, ref_id, amount_usd, created_at";
 
 /**

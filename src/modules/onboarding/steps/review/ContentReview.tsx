@@ -47,7 +47,7 @@ export function ContentReview() {
             {c.imageStyles.length ? (
               <Chips numbered items={(c.imageStyles as ImageStyle[]).map((s) => imageStyleWords(s, service).title)} />
             ) : (
-              "A wide mix, chosen by Prodo"
+              "A wide mix, chosen by Brandwright"
             )}
           </Row>
           {videos && (
@@ -55,7 +55,7 @@ export function ContentReview() {
               {c.videoStyles.length ? (
                 <Chips numbered items={(c.videoStyles as VideoStyle[]).map((s) => videoStyleWords(s, service).title)} />
               ) : (
-                "A wide mix, chosen by Prodo"
+                "A wide mix, chosen by Brandwright"
               )}
             </Row>
           )}

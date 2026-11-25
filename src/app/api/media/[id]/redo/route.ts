@@ -16,7 +16,7 @@ export const POST = apiHandler(async (req: NextRequest, { params }: { params: Pr
   const { db, businessId } = await currentBusiness();
   const original = await getMedia(db, id);
 
-  if (original.source !== "generated") throw new AppError("Only media Prodo made can be made again. Upload a new file instead.", "INVALID_INPUT", false);
+  if (original.source !== "generated") throw new AppError("Only media Brandwright made can be made again. Upload a new file instead.", "INVALID_INPUT", false);
   if (original.type === "text") throw new AppError("Text posts can't be made again. Edit the text in a post instead.", "INVALID_INPUT", false);
   if (original.plan_item_id) throw new AppError("This came from the weekly plan. Use Make again on This week instead.", "INVALID_INPUT", false);
   if (original.type === "video") await assertVideoReady();

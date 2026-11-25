@@ -149,9 +149,9 @@ export function StylePicker({ videos, service, value, onChange }: { videos: bool
             ))}
           </ol>
         ) : (
-          <span className={hint}>Nothing picked yet: Prodo will try a wide mix and learn what works.</span>
+          <span className={hint}>Nothing picked yet: Brandwright will try a wide mix and learn what works.</span>
         )}
-        <span className={hint}>Your first pick is used most and the rest are mixed in. Prodo keeps your order, then adjusts it from real results.</span>
+        <span className={hint}>Your first pick is used most and the rest are mixed in. Brandwright keeps your order, then adjusts it from real results.</span>
       </div>
     </div>
   );

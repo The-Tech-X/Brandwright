@@ -2,7 +2,7 @@ import { ai } from "@/providers/ai/registry";
 import { smoke } from "./_run";
 
 await smoke("elevenlabs voice", async () => {
-  const r = await ai.voice("Prodo is ready.");
+  const r = await ai.voice("Brandwright is ready.");
   return { result: { bytes: r.data.buffer.length, durationSec: r.data.durationSec, words: r.data.words }, usage: r.usage };
 });
 

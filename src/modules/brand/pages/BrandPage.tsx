@@ -110,7 +110,7 @@ const TABS: { value: Tab; label: string; icon: LucideIcon; pending?: PendingKind
         badge={(row) =>
           row.source === "discovered" ? (
             <Badge tone="primary" size="sm">
-              Found by Prodo
+              Found by Brandwright
             </Badge>
           ) : null
         }
@@ -136,7 +136,7 @@ export function BrandPage() {
 
   return (
     <div className="mx-auto flex max-w-[1240px] flex-col gap-7">
-      <PageHeader title="Brand" description="Everything Prodo knows about your brand. Agents only use what's here." actions={<RefreshButton />} />
+      <PageHeader title="Brand" description="Everything Brandwright knows about your brand. Agents only use what's here." actions={<RefreshButton />} />
       <RefreshProgress />
 
       <div className="grid grid-cols-1 items-start gap-7 lg:grid-cols-[230px_minmax(0,1fr)]">

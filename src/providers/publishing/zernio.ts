@@ -86,7 +86,7 @@ export async function zernioCall(path: string, init: RequestInit = {}): Promise<
 /** Tags a business's profile in Zernio, so a second create finds the first instead of duplicating it. */
 function externalId(businessId: string): string {
   const ref = env.SUPABASE_PROJECT_REF ?? new URL(env.NEXT_PUBLIC_SUPABASE_URL).hostname.split(".")[0];
-  return `prodo-${ref}-${businessId}`;
+  return `brandwright-${ref}-${businessId}`;
 }
 
 /** Creates the business's profile, or returns the one Zernio already has for it (two calls at once both land here). */
@@ -95,7 +95,7 @@ async function createProfile(name: string, businessId: string): Promise<string> 
   const res = await request(SERVICE, `${ZERNIO_API}/profiles`, {
     method: "POST",
     headers: zernioHeaders(),
-    body: JSON.stringify({ name, externalId: tag, description: "Created by Prodo" }),
+    body: JSON.stringify({ name, externalId: tag, description: "Created by Brandwright" }),
   });
   const body = await res.json().catch(() => ({}));
   if (res.ok && body.profile?._id) return body.profile._id;
@@ -126,9 +126,9 @@ async function businessProfileId(db: SupabaseClient): Promise<string> {
   if (settings.zernio_profile_id) return settings.zernio_profile_id;
 
   const { data: business } = await db.from("business_profile").select("name").single();
-  const id = await createProfile(business?.name?.trim() || "Prodo", settings.business_id);
+  const id = await createProfile(business?.name?.trim() || "Brandwright", settings.business_id);
 
-  // Only the server may set the profile (migration 0017), so a user can't swap in another business's
+  // Only the server may set the profile (trigger guard_server_columns), so a user can't swap in another business's
   const { error: saveError } = await businessDb(settings.business_id).from("app_settings").update({ zernio_profile_id: id }).eq("business_id", settings.business_id);
   if (saveError) throw new AppError("Couldn't save the Zernio profile. Try again.", "PROVIDER_DOWN", true);
   return id;

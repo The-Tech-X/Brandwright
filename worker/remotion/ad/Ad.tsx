@@ -1,4 +1,4 @@
-// The ad: draws one Timeline (worker/remotion/shared/timeline.ts) built by Prodo. Scenes play in a
+// The ad: draws one Timeline (worker/remotion/shared/timeline.ts) built by Brandwright. Scenes play in a
 // TransitionSeries; captions, titles, cards and stickers sit above at their frames; the soundtrack
 // runs underneath. Every time and place comes from the Timeline; this file only draws.
 

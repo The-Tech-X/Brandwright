@@ -22,9 +22,9 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: { default: "Prodo", template: "%s · Prodo" },
-  description: "Your autonomous content team: Prodo learns your brand, then plans, makes and publishes on-brand posts every week.",
-  applicationName: "Prodo",
+  title: { default: "Brandwright", template: "%s · Brandwright" },
+  description: "Your autonomous content team: Brandwright learns your brand, then plans, makes and publishes on-brand posts every week.",
+  applicationName: "Brandwright",
 };
 
 export const viewport: Viewport = {

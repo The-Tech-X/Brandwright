@@ -114,10 +114,10 @@ async function main() {
       userMessage({ message: 'duplicate key value violates unique constraint "x_pkey"', code: "23505", details: "Key (id)=(1) already exists.", hint: null }),
       'Database error: a row like this already exists (23505): "duplicate key value violates unique constraint "x_pkey" · Key (id)=(1) already exists.".'
     );
-    assert.match(userMessage({ message: 'column "style" does not exist', code: "42703", details: null, hint: null }), /a migration hasn't been applied/);
+    assert.match(userMessage({ message: 'column "style" does not exist', code: "42703", details: null, hint: null }), /the database is behind supabase\/schema\.sql/);
     assert.match(userMessage({ message: "TypeError: fetch failed", code: "", details: "ECONNRESET", hint: "" }), /^Couldn't reach the database: "ECONNRESET"/);
     assert.match(userMessage({ message: "AbortError", code: "", details: "", hint: "Request was aborted (timeout or manual cancellation)" }), /^The database didn't answer in time/);
-    assert.match(userMessage({ message: "Could not find the table 'public.x' in the schema cache", code: "PGRST205", details: null, hint: null }), /doesn't know this table \(a migration hasn't been applied\) \(PGRST205\)/);
+    assert.match(userMessage({ message: "Could not find the table 'public.x' in the schema cache", code: "PGRST205", details: null, hint: null }), /doesn't know this table \(the database is behind supabase\/schema\.sql\) \(PGRST205\)/);
     assert.match(userMessage({ message: "terminating connection", code: "08006", details: null, hint: null }), /^Database error: the connection to the database failed \(08006\)/);
     assert.equal(userMessage(new TypeError("Cannot read properties of undefined (reading 'map')")), "Internal error (TypeError): Cannot read properties of undefined (reading 'map').");
     const zodError = z.object({ name: z.string() }).safeParse({ name: 3 });
@@ -292,7 +292,7 @@ async function main() {
     assert.match((await failure(() => twelvelabs.analyze("https://cdn.a.com/v.mp4", "x"))).message, /answered, but not in valid JSON: "not json at all"/);
   });
 
-  await check("retries: only what can change is retried; database rules, missing migrations, code bugs and wrong shapes stop at once", async () => {
+  await check("retries: only what can change is retried; database rules, a database behind schema.sql, code bugs and wrong shapes stop at once", async () => {
     const { classify } = await import("@/core/errors");
     const db = (code: string) => ({ message: "x", code, details: null, hint: null });
     assert.deepEqual(classify(db("42703")), { type: "NOT_CONFIGURED", retryable: false });
@@ -324,8 +324,8 @@ async function main() {
     const credit = thrown(new AppError("OpenAI is out of credit.", "OUT_OF_CREDIT", false));
     assert.ok(stops(credit));
     assert.equal(credit.message, "[[OUT_OF_CREDIT]] OpenAI is out of credit.");
-    const migration = thrown({ message: 'column "style" does not exist', code: "42703", details: null, hint: null });
-    assert.ok(stops(migration) && migration.message.startsWith("[[NOT_CONFIGURED]] Database error: a column is missing"), migration.message);
+    const behind = thrown({ message: 'column "style" does not exist', code: "42703", details: null, hint: null });
+    assert.ok(stops(behind) && behind.message.startsWith("[[NOT_CONFIGURED]] Database error: a column is missing"), behind.message);
     assert.ok(waits(thrown(new AppError("Busy.", "RATE_LIMITED", true, 5_000))));
     const blip = thrown({ message: "deadlock detected", code: "40P01", details: null, hint: null });
     assert.ok(!stops(blip) && !waits(blip));

@@ -62,7 +62,7 @@ export interface SlotInput {
   pillars: PillarShare[];
   /** The client's goals, ranked */
   goals?: string[];
-  /** The client's content mix; null = Prodo's own balance */
+  /** The client's content mix; null = Brandwright's own balance */
   mix?: ContentMix | null;
   /** The client's styles in priority order (empty = any) */
   styles?: { image: ImageStyle[]; video: VideoStyle[] };

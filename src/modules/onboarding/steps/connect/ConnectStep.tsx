@@ -17,7 +17,7 @@ export function ConnectStep() {
     <StepLayout step="connect" title={STEP_META.connect.title} lead={STEP_META.connect.lead}>
       <Section
         title="Social accounts"
-        description="Connect the accounts you want Prodo to post to. You'll sign in on each platform's own page; we never see your password."
+        description="Connect the accounts you want Brandwright to post to. You'll sign in on each platform's own page; we never see your password."
       >
         <AccountsList planned={posting} />
         {missing.length > 0 && !isLoading && (

@@ -185,7 +185,7 @@ export const newBusinessSchema = z.object({
 
 /**
  * A new business: its login (email and password, confirmed, no email sent) and its first credits. The database
- * makes the business and its settings for the new login (prodo_create_business); the client then logs in and
+ * makes the business and its settings for the new login (brandwright_create_business); the client then logs in and
  * goes through onboarding.
  */
 export async function createBusinessLogin(admin: AdminUser, input: z.infer<typeof newBusinessSchema>): Promise<AdminBusiness> {
@@ -200,7 +200,7 @@ export async function createBusinessLogin(admin: AdminUser, input: z.infer<typeo
   if (findError || !business) {
     // No business came with the login: don't leave a login that can't do anything
     await db.auth.admin.deleteUser(userId).catch(() => undefined);
-    throw new AppError("The login was made but its business wasn't, so it was removed again. Check that migration 0032 ran, then try again.", "NOT_CONFIGURED", false);
+    throw new AppError("The login was made but its business wasn't, so it was removed again. Check that supabase/schema.sql was run on the database, then try again.", "NOT_CONFIGURED", false);
   }
   if (input.credits > 0) await addCredits(admin, business.id, { credits: input.credits, amountUsd: input.amountUsd ?? null, note: input.note ?? null });
   return getBusiness(business.id);

@@ -35,7 +35,7 @@ export function PostCard({ post, onCancel, onDelete }: PostCardProps) {
           <span className="text-[13px] text-ob-muted">{whenLine(post)}</span>
           {post.origin === "agent" && (
             <Badge tone="primary" size="sm">
-              <Bot size={12} /> By Prodo
+              <Bot size={12} /> By Brandwright
             </Badge>
           )}
         </div>

@@ -64,7 +64,7 @@ export interface MakeAdInput {
 
 /**
  * Images and videos from Media → Create go through the same chain as This week → Create an ad (Creative
- * Director, QA, Producer, QA), so they are made exactly like the ones Prodo plans itself.
+ * Director, QA, Producer, QA), so they are made exactly like the ones Brandwright plans itself.
  */
 export function useMakeAd() {
   const qc = useQueryClient();

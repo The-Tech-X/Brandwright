@@ -57,7 +57,7 @@ export function AddBusinessModal({ open, onOpenChange }: { open: boolean; onOpen
   async function copy() {
     if (!made) return;
     try {
-      await navigator.clipboard.writeText(`Prodo login\nEmail: ${made.email}\nPassword: ${made.password}`);
+      await navigator.clipboard.writeText(`Brandwright login\nEmail: ${made.email}\nPassword: ${made.password}`);
       setCopied(true);
     } catch {
       setCopied(false);

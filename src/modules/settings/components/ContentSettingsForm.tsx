@@ -64,7 +64,7 @@ export function ContentSettingsForm() {
         </Field>
       </Card>
 
-      <Card title="Kinds of posts" description="Your first pick is used most and the rest are mixed in. Nothing picked: Prodo tries a wide mix and learns what works.">
+      <Card title="Kinds of posts" description="Your first pick is used most and the rest are mixed in. Nothing picked: Brandwright tries a wide mix and learns what works.">
         <Field error={errors.imageStyles ?? errors.videoStyles}>
           <StylePicker
             videos={videos}
@@ -75,7 +75,7 @@ export function ContentSettingsForm() {
         </Field>
       </Card>
 
-      <Card title="People in your posts" description="Decides which photo and video styles Prodo makes. Photos of your team live in Brand → Assets.">
+      <Card title="People in your posts" description="Decides which photo and video styles Brandwright makes. Photos of your team live in Brand → Assets.">
         <Field error={errors.people}>
           <ChoiceCards label="People in your posts" options={PEOPLE_OPTIONS} value={form.people} onChange={(people) => set({ people })} />
         </Field>

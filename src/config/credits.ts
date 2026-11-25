@@ -1,5 +1,5 @@
 // Credits: what clients pay with. 1 credit = $0.10. Admins add credits after a payment (the admin panel);
-// every action that costs Prodo money takes its credits. The prices here are the defaults: the live ones are
+// every action that costs Brandwright money takes its credits. The prices here are the defaults: the live ones are
 // in the credit_prices table, which the admin panel edits (Prices).
 
 export type CreditAction =

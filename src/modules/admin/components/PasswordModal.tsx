@@ -39,7 +39,7 @@ export function PasswordModal({ businessId, email, open, onOpenChange }: { busin
 
   async function copy() {
     try {
-      await navigator.clipboard.writeText(`Prodo login\nEmail: ${email ?? ""}\nPassword: ${password}`);
+      await navigator.clipboard.writeText(`Brandwright login\nEmail: ${email ?? ""}\nPassword: ${password}`);
       setCopied(true);
     } catch {
       setCopied(false);

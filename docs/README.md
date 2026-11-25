@@ -1,10 +1,10 @@
-# Prodo
+# Brandwright
 
-Autonomous AI ad and content system for many businesses, each with its own login (a login can also add other businesses and switch between them). Onboarding teaches Prodo a business's brand: agents read its website, visuals, videos, socials and competitors, and write a Brand Bible the client approves. After that, agents plan, produce, publish and learn from posts every week. Clients can still create media and posts by hand.
+Autonomous AI ad and content system for many businesses, each with its own login (a login can also add other businesses and switch between them). Onboarding teaches Brandwright a business's brand: agents read its website, visuals, videos, socials and competitors, and write a Brand Bible the client approves. After that, agents plan, produce, publish and learn from posts every week. Clients can still create media and posts by hand.
 
 | Doc | What it covers |
 |---|---|
-| This file | What Prodo is, setup, services, deployment, working rules |
+| This file | What Brandwright is, setup, services, deployment, working rules |
 | [`technical.md`](technical.md) | Every flow and rule: providers, agents, onboarding, research, the weekly loop, videos, storage, multi-tenant, errors, jobs, checks, APIs |
 | [`database.md`](database.md) | Every table, column, relationship, on-delete rule and file location |
 | [`../worker/README.md`](../worker/README.md) | The video worker (Remotion + ffmpeg) and how to deploy it |
@@ -25,21 +25,21 @@ npx inngest-cli@latest dev   # background jobs and agents, http://localhost:8288
 
 **Supabase** (database and logins)
 
-1. Database → Extensions: turn on `vector` (schema `extensions`). Migration `0011` also creates it if missing.
-2. Apply the migrations in `supabase/migrations/` in order: `npx supabase link --project-ref <ref>` then `npx supabase db push --linked` (or paste each file into the SQL Editor).
+1. Database → Extensions: turn on `vector` (schema `extensions`). `supabase/schema.sql` also creates it if missing.
+2. SQL Editor: paste [`supabase/schema.sql`](../supabase/schema.sql) (the whole database) and run it once, before any login exists. Then make the first admin: `npm run smoke scripts/setup/admin.ts <email>`.
 3. Generate types: `npx supabase gen types typescript --project-id <ref> --schema public > src/types/database.ts` (PowerShell: pipe to `Out-File -Encoding utf8`).
 4. Authentication → Sign In / Providers → Email: turn off "Allow new users to sign up".
 5. Authentication → Users → Add user (tick Auto Confirm) for each business owner. Each login gets its own business.
 
 **Cloudflare R2** (files)
 
-1. Create a bucket (ours: `prodo-media`), turn on its public `r2.dev` address (a custom domain before launch: `r2.dev` is rate-limited), and make an API token with Object Read & Write on it.
+1. Create a bucket (ours: `brandwright-media`), turn on its public `r2.dev` address (a custom domain before launch: `r2.dev` is rate-limited), and make an API token with Object Read & Write on it.
 2. Fill in `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`, `R2_BUCKET`, `R2_ENDPOINT` and `NEXT_PUBLIC_MEDIA_URL` in `.env.local`.
 3. `npm run smoke scripts/setup/r2-bucket.ts [https://your-app-address]` sets the bucket's rules: reading from any page, uploads from the app, and auto-delete of in-between (`work/`, 90 days) and temporary (`tmp/`, 7 days) files. Run it again when the app gets a new address.
 4. `npm run smoke scripts/setup/sfx.ts` puts the video sound effects in `shared/sfx/`.
 5. Check: `npm run smoke scripts/smoke/r2.ts`.
 
-**Video worker** (every video is drawn there): deploy `worker/` on the VPS ([`worker/README.md`](../worker/README.md)), then set `FFMPEG_WORKER_URL` and `FFMPEG_WORKER_SECRET` in `.env.local`. Check with `npm run smoke scripts/smoke/render-ad.ts`. Without it, Prodo plans and makes no videos.
+**Video worker** (every video is drawn there): deploy `worker/` on the VPS ([`worker/README.md`](../worker/README.md)), then set `FFMPEG_WORKER_URL` and `FFMPEG_WORKER_SECRET` in `.env.local`. Check with `npm run smoke scripts/smoke/render-ad.ts`. Without it, Brandwright plans and makes no videos.
 
 ## Stack
 
@@ -76,7 +76,7 @@ One repo, one deploy for every business (multi-tenant). **Every business is sepa
 2. **Weekly loop**: Planner → Creative Director → QA Gate 1 → Producer → QA Gate 2 → client approval (or full autopilot) → Publisher.
 3. **Learning loop**: the Performance Analyst reads post results daily and writes learnings weekly; the Planner uses them.
 
-Clients pay with **credits** (1 credit = $0.10): the client pays outside the app and an admin adds the credits in the **admin panel** (`/admin`, for Prodo's team only), which also makes each client's login, and shows usage, top-ups, money in and our AI cost. Every action that costs money takes its credits (refunded when the work fails); without enough, nothing starts. Every agent step is logged with its cost; a monthly safety cap and a pause switch stop all spending. Details in [`technical.md`](technical.md).
+Clients pay with **credits** (1 credit = $0.10): the client pays outside the app and an admin adds the credits in the **admin panel** (`/admin`, for Brandwright's team only), which also makes each client's login, and shows usage, top-ups, money in and our AI cost. Every action that costs money takes its credits (refunded when the work fails); without enough, nothing starts. Every agent step is logged with its cost; a monthly safety cap and a pause switch stop all spending. Details in [`technical.md`](technical.md).
 
 ### Tabs
 
@@ -99,13 +99,13 @@ One Vercel project + one Supabase project + one Inngest environment + one video 
 
 - **App (Vercel)**: set every variable from `.env.example` (never `INNGEST_DEV`). Run the R2 bucket script with the app's address so browser uploads are allowed.
 - **Worker (VPS)**: see [`worker/README.md`](../worker/README.md). Deploy it whenever `worker/` changes, so it always runs the same code as the app.
-- **Database**: new migrations go in `supabase/migrations/` and are applied before the code that needs them.
+- **Database**: a change goes into `supabase/schema.sql`, and the same change is run once in the SQL Editor before the code that needs it is deployed.
 
 ### Adding a business
 
 1. Supabase → Authentication → Users → **Add user** (email and password, or an invite).
 2. The database creates the login's business and its settings rows (notification email = the login's email).
-3. The person logs in and goes through onboarding; Prodo researches their brand and they approve their Brand Bible.
+3. The person logs in and goes through onboarding; Brandwright researches their brand and they approve their Brand Bible.
 
 Deleting a login keeps its business and data; nobody can open them until the business gets a new owner.
 
@@ -116,7 +116,7 @@ Deleting a login keeps its business and data; nobody can open them until the bus
 - **Facts only**: every price, number, review or deadline in an ad comes from a stored fact or the client's own answer.
 - **Storage keys, never URLs**, built with the helpers in `src/providers/storage/paths.ts`.
 - **Every query is limited to one business**: RLS in API routes, `businessDb(businessId)` in agents and jobs.
-- **Migrations are never edited** once applied; add a new one and list it in `database.md`.
+- **One schema file**: `supabase/schema.sql` is always the whole, current database (no migration files). Change it in place, run the change on the live database, and update `database.md`.
 - **Secrets** stay in `.env.local` and the VPS's `worker/.env` (both git-ignored).
 - **Real vendor calls cost money**: test with the offline checks and local renders first; never fake a vendor response to make a check pass; post only to test accounts.
 - **Docs change with the code.**

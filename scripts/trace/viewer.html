@@ -1,10 +1,10 @@
-<title>Prodo Research Trace</title>
+<title>Brandwright Research Trace</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
 <style>
-/* Prodo's light app theme (src/styles/globals.css): grey page, white cards, #0078D4 for active states.
+/* Brandwright's light app theme (src/styles/globals.css): grey page, white cards, #0078D4 for active states.
    Layout: header with run facts → summary tiles → agent timeline → tabs (Agents, Vendors, AI, Database, All events). */
 :root {
   color-scheme: light;
@@ -583,7 +583,7 @@ function dbView(m) {
     before = `<section class="card"><div class="card-h"><h2>Before and after</h2><span class="ctx">Row counts when the run started and when it ended</span></div><div class="table-wrap"><table>
       <thead><tr><th>Table</th><th class="r">Before</th><th class="r">After</th><th class="r">Change</th></tr></thead><tbody>
       ${names.map((n) => row(`<span class="mono">${esc(n)}</span>`, a[n], b[n])).join("")}
-      ${row("Offerings waiting for you", wa.pendingOfferings, wb.pendingOfferings)}${row("Offers waiting for you", wa.pendingOffers, wb.pendingOffers)}${row("Proof waiting for you", wa.pendingProof, wb.pendingProof)}${row("Competitors found by Prodo", wa.discovered, wb.discovered)}
+      ${row("Offerings waiting for you", wa.pendingOfferings, wb.pendingOfferings)}${row("Offers waiting for you", wa.pendingOffers, wb.pendingOffers)}${row("Proof waiting for you", wa.pendingProof, wb.pendingProof)}${row("Competitors found by Brandwright", wa.discovered, wb.discovered)}
       </tbody></table></div>
       ${s.end?.kit ? `<div class="card-b" style="border-top:1px solid var(--border-subtle)">${kitChanged ? `<p style="margin-bottom:10px"><b>Brand kit</b> <span class="chip ok">changed</span></p>${block("Brand kit after the run", s.end.kit)}${block("Brand kit before the run", s.start?.kit)}` : `<p><b>Brand kit</b> <span class="chip">unchanged</span></p>`}</div>` : ""}
     </section>`;

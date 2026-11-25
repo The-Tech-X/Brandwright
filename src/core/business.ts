@@ -14,7 +14,7 @@ export interface CurrentBusiness {
 
 /**
  * The id of the business this request is for. `db` must be the logged-in client: the database picks the business
- * the tab or device asked for, when the login belongs to it, else the login's own (current_business_id(), 0030).
+ * the tab or device asked for, when the login belongs to it, else the login's own (current_business_id()).
  */
 export async function businessIdOf(db: SupabaseClient): Promise<string> {
   const { data, error } = await db.rpc("current_business_id");

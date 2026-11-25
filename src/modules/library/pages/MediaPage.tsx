@@ -58,7 +58,7 @@ export function MediaPage() {
       <PageHeader
         eyebrow="Content"
         title="Media"
-        description={generating ? `${generating} being made right now. They appear here when ready.` : "Images, videos, carousels and text, made by you or by Prodo, ready to post."}
+        description={generating ? `${generating} being made right now. They appear here when ready.` : "Images, videos, carousels and text, made by you or by Brandwright, ready to post."}
         actions={
           <button type="button" className={button()} onClick={() => setCreateTab("image")}>
             <Plus size={17} /> Create

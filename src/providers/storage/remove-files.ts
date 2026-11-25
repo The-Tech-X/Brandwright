@@ -12,7 +12,7 @@ function unfoldered(key: string): boolean {
 
 /**
  * Deletes a business's files from storage. Logged-in users may not delete files themselves
- * (migration 0017), so this runs as the server. Whatever a row says, it only deletes keys in the
+ * (RLS), so this runs as the server. Whatever a row says, it only deletes keys in the
  * business's own folders (its folder and its in-between files under work/), or files from before multi-tenant when the business owns those.
  */
 export async function removeFiles(businessId: string, keys: (string | null | undefined)[]): Promise<void> {

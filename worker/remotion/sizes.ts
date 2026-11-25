@@ -1,4 +1,4 @@
-// The video sizes every template is registered in. The id suffix is what Prodo asks for,
+// The video sizes every template is registered in. The id suffix is what Brandwright asks for,
 // e.g. "check-9x16".
 
 export const FPS = 30;

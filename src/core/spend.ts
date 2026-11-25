@@ -8,7 +8,7 @@ export function monthStart(): string {
 }
 
 /**
- * Added up in the database (month_spend(), migration 0032): reading the rows here stopped at the API's
+ * Added up in the database (month_spend(), supabase/schema.sql): reading the rows here stopped at the API's
  * 1,000-row cap, which a busy business passes in a month, so the budget stop under-counted.
  * Works with the logged-in client (its own business) and with businessDb (which passes p_business_id).
  */

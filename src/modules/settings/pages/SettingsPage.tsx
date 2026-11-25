@@ -22,7 +22,7 @@ const TABS: (SectionNavItem<Tab> & { title: string; description: string })[] = [
     description: "What your posts look and sound like, and where customers go. The agents follow these from the next plan.",
   },
   { value: "automation", label: "Automation", icon: Bot, title: "Automation", description: "How much the agents do on their own, when they plan, and how much they may spend." },
-  { value: "accounts", label: "Connected accounts", icon: Share2, title: "Connected accounts", description: "Where Prodo publishes. You sign in on each platform's own page; we never see your password." },
+  { value: "accounts", label: "Connected accounts", icon: Share2, title: "Connected accounts", description: "Where Brandwright publishes. You sign in on each platform's own page; we never see your password." },
 ];
 
 /** Settings, with the open section in the URL (?tab=accounts) so links can point at it. */

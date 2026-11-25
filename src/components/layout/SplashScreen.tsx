@@ -53,7 +53,7 @@ export function SplashScreen() {
     <div
       role="status"
       aria-live="polite"
-      aria-label="Loading Prodo"
+      aria-label="Loading Brandwright"
       className={cn(
         "fixed inset-0 z-[100] flex flex-col items-center justify-center gap-7 bg-ob-bg font-ob text-ob-ink transition-opacity ease-out",
         phase === "leaving" && "pointer-events-none opacity-0"
@@ -69,7 +69,7 @@ export function SplashScreen() {
           <LogoMark size={76} className="relative drop-shadow-[0_12px_28px_rgb(0_0_0/0.25)]" />
         </div>
         <div className="flex flex-col items-center gap-1">
-          <span className="text-[26px] font-extrabold tracking-tight">Prodo</span>
+          <span className="text-[26px] font-extrabold tracking-tight">Brandwright</span>
           {businessName && <span className="text-sm font-semibold text-ob-muted">{businessName}</span>}
         </div>
       </div>

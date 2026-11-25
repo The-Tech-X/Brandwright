@@ -1,6 +1,6 @@
-// The contract between Prodo and the Ad composition. Prodo builds a Timeline from the brief, the
+// The contract between Brandwright and the Ad composition. Brandwright builds a Timeline from the brief, the
 // voice timings, the media it made and the picture analysis (src/creative/video/); the composition
-// only draws it. Every time and position is decided by Prodo from data, never here.
+// only draws it. Every time and position is decided by Brandwright from data, never here.
 // Data only, no imports: the app (Next.js) and the worker both compile this file.
 
 export const FPS = 30;

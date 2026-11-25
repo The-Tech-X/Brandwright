@@ -38,7 +38,7 @@ export function DayAgenda({ day, today, entries, events, onAddDate, onDeleteEven
             <span className="text-[13.5px] font-bold">{ev.name}</span>
             <span className="text-xs font-medium opacity-80">
               {EVENT_STYLE[ev.kind].label}
-              {ev.source === "client" ? " · added by you" : " · found by Prodo"}
+              {ev.source === "client" ? " · added by you" : " · found by Brandwright"}
               {ev.notes ? ` · ${ev.notes}` : ""}
             </span>
           </span>

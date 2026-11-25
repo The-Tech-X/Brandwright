@@ -65,7 +65,7 @@ export function TopPosts({ posts }: { posts: Post[] }) {
                       </span>
                       {p.origin === "agent" && (
                         <Badge tone="primary" size="sm">
-                          By Prodo
+                          By Brandwright
                         </Badge>
                       )}
                       {p.url && <ExternalLink size={12} className="ml-auto text-ob-faint" aria-label="Has a live link" />}

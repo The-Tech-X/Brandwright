@@ -7,7 +7,7 @@ import { smoke } from "./_run";
 
 const key = `tmp/smoke/r2-${Date.now()}.txt`;
 const signedKey = `tmp/smoke/r2-signed-${Date.now()}.txt`;
-const text = `hello from prodo ${new Date().toISOString()}`;
+const text = `hello from brandwright ${new Date().toISOString()}`;
 
 await smoke("r2 upload + public link + download", async () => {
   await upload(key, Buffer.from(text, "utf8"), "text/plain");

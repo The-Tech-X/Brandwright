@@ -25,7 +25,7 @@ const PILLARS = [
   { name: "Behind the scenes", share: 20 },
 ];
 
-/** Left half of the login page: what Prodo does, shown as a week of work in progress. */
+/** Left half of the login page: what Brandwright does, shown as a week of work in progress. */
 export function BrandPanel() {
   return (
     <aside className="relative hidden overflow-hidden bg-ob-dark text-ob-on-dark lg:flex lg:flex-col lg:justify-between lg:p-12">
@@ -43,7 +43,7 @@ export function BrandPanel() {
             <span className="text-ob-primary-soft">on autopilot.</span>
           </h2>
           <p className="m-0 text-base leading-relaxed text-ob-on-dark-soft">
-            Prodo learns your brand, plans the week, makes the posts and publishes them. You just approve.
+            Brandwright learns your brand, plans the week, makes the posts and publishes them. You just approve.
           </p>
         </div>
 

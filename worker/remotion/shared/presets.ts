@@ -1,4 +1,4 @@
-// The looks a video can have. Prodo picks one per business from its tone and industry
+// The looks a video can have. Brandwright picks one per business from its tone and industry
 // (src/creative/video/preset.ts); everything here is a rule the timeline builder and the
 // composition apply the same way every time. Data only, no imports (shared by app and worker).
 

@@ -19,7 +19,7 @@ const LABELS: Record<PostingPlatform, string> = {
   twitter: "X",
 };
 
-/** Every platform Prodo posts to, with its connected account or a Connect button. Used in onboarding and Settings. */
+/** Every platform Brandwright posts to, with its connected account or a Connect button. Used in onboarding and Settings. */
 export function AccountsList({ planned }: { planned?: Partial<Record<PostingPlatform, number>> }) {
   const { data: accounts = [], isLoading, error, refetch, isFetching } = useAccounts();
   const [opening, setOpening] = useState<string | null>(null);

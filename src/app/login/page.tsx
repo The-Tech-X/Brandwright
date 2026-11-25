@@ -120,7 +120,7 @@ export default function LoginPage() {
             </button>
           </form>
 
-          <p className="m-0 text-[13px] text-ob-faint">Your login is set up by your Prodo admin. Forgot your password? Ask them to send a reset link.</p>
+          <p className="m-0 text-[13px] text-ob-faint">Your login is set up by your Brandwright admin. Forgot your password? Ask them to send a reset link.</p>
         </div>
       </main>
     </div>

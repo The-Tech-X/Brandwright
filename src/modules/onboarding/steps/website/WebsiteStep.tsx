@@ -65,7 +65,7 @@ export function WebsiteStep() {
     <div className={cn(container, "pb-24 pt-14")}>
       <main className="mx-auto flex w-full max-w-[640px] flex-col gap-5">
         <div className="flex flex-col gap-1.5">
-          <span className="text-[13px] font-bold uppercase tracking-[0.06em] text-ob-primary">Set up Prodo</span>
+          <span className="text-[13px] font-bold uppercase tracking-[0.06em] text-ob-primary">Set up Brandwright</span>
           <h1 className="m-0 text-[32px] font-extrabold leading-tight tracking-tight">{STEP_META.website.title}</h1>
           <p className="m-0 text-base text-ob-muted">{STEP_META.website.lead}</p>
         </div>

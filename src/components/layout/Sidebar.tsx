@@ -10,7 +10,7 @@ import { AccountMenu, BottomLinks, NavGroups } from "./NavContent";
 
 const EXPANDED_WIDTH = 248;
 const COLLAPSED_WIDTH = 72;
-const STORAGE_KEY = "prodo.sidebar.collapsed";
+const STORAGE_KEY = "brandwright.sidebar.collapsed";
 
 /**
  * Desktop sidebar (lg and up): grouped navigation, Notifications and Settings, the account menu
@@ -48,7 +48,7 @@ export function Sidebar() {
         style={{ width, transition: "width 200ms ease" }}
       >
         <div className={cn("flex h-16 shrink-0 items-center gap-2.5 border-b border-ob-line", collapsed ? "justify-center px-0" : "px-5")}>
-          <Link href="/week" aria-label="Prodo home" className={cn("rounded-ob", focusRing)}>
+          <Link href="/week" aria-label="Brandwright home" className={cn("rounded-ob", focusRing)}>
             {collapsed ? <LogoMark size={30} /> : <Logo />}
           </Link>
         </div>

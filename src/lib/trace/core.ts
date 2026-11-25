@@ -34,8 +34,8 @@ interface TraceState {
 }
 
 // One shared state, even when the bundler loads this file more than once
-const holder = globalThis as unknown as { __prodoTrace?: TraceState };
-const state = (holder.__prodoTrace ??= { als: new AsyncLocalStorage(), seq: 0, attempts: new Map() });
+const holder = globalThis as unknown as { __brandwrightTrace?: TraceState };
+const state = (holder.__brandwrightTrace ??= { als: new AsyncLocalStorage(), seq: 0, attempts: new Map() });
 
 export const enabled = process.env.TRACE_LOG === "1" && process.env.NODE_ENV !== "production";
 

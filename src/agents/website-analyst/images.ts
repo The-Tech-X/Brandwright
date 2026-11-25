@@ -14,7 +14,7 @@ const MAX_HTML_CHARS = 2_000_000;
 const MIN_PHOTO_PX = 300;
 const MAX_PHOTO_PX = 2000;
 const MAX_LOGO_PX = 1000;
-const HEADERS = { "User-Agent": "Mozilla/5.0 (compatible; ProdoBot/1.0)" };
+const HEADERS = { "User-Agent": "Mozilla/5.0 (compatible; BrandwrightBot/1.0)" };
 
 /** The homepage HTML, or null when the site doesn't return a page. */
 export async function fetchHtml(url: string): Promise<string | null> {

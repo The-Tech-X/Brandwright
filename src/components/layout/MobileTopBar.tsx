@@ -28,7 +28,7 @@ export function MobileTopBar() {
         <button type="button" className={button({ variant: "quiet", size: "icon" })} aria-label="Open menu" onClick={() => setOpen(true)}>
           <Menu size={20} />
         </button>
-        <Link href="/week" aria-label="Prodo home" className={cn("rounded-ob", focusRing)}>
+        <Link href="/week" aria-label="Brandwright home" className={cn("rounded-ob", focusRing)}>
           <Logo size="sm" />
         </Link>
         <Link href="/notifications" aria-label={unread ? `Notifications, ${unread} unread` : "Notifications"} className={cn(button({ variant: "quiet", size: "icon" }), "relative")}>

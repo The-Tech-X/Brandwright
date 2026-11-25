@@ -47,7 +47,7 @@ export function EmptyWeek({
             : lastDay
               ? "This week ends today, and posts are only planned from tomorrow on. Plan next week instead."
               : automation?.auto_plan
-              ? `Prodo plans the next week every ${DAYS[automation.plan_weekday]} at ${automation.plan_time}${automation.paused ? " (paused right now)" : ""}. You can also plan it now, or make a single ad.`
+              ? `Brandwright plans the next week every ${DAYS[automation.plan_weekday]} at ${automation.plan_time}${automation.paused ? " (paused right now)" : ""}. You can also plan it now, or make a single ad.`
               : "Plan the week now, or make a single ad."}
         </p>
         {!waiting && !isPast && (

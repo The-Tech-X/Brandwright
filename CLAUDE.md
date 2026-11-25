@@ -1,4 +1,4 @@
-# CLAUDE.md — Prodo
+# CLAUDE.md — Brandwright
 
 Autonomous AI ad and content system. Onboarding builds each business's brand knowledge (Brand Bible, Brand Brain); ten agents then plan, produce, publish and learn from posts on a weekly loop. Manual create-and-post still works alongside the agents.
 
@@ -8,7 +8,7 @@ One deploy serves many businesses (multi-tenant). Each business has its own logi
 
 The docs in this repo describe the system as it is. When code and docs disagree, find out which is right, fix the other, and say so.
 
-- `docs/README.md` — what Prodo is, setup, services, deployment, working rules
+- `docs/README.md` — what Brandwright is, setup, services, deployment, working rules
 - `docs/technical.md` — every flow and rule: providers, agents, onboarding, research, the weekly loop, videos, storage, multi-tenant, errors, jobs, checks, APIs
 - `docs/database.md` — every table, column, relationship, on-delete rule and file location
 - `worker/README.md` — the video worker (Remotion + ffmpeg) on the VPS
@@ -30,18 +30,18 @@ Older planning pages (the Blueprint, Data Model and Sprint plans on claude.ai) a
 
 - Built: onboarding v2 (website scan first) → brand research (agents 1–4) → Brand Bible approval → weekly loop (agents 5–9) → learning loop (agent 10). Manual Media, Posts and Calendar screens. Performance, Activity and Credits screens. Settings: Business profile, Content, Automation, Connected accounts. Credits (clients pay with credits an admin adds) and the admin panel (`/admin`: dashboard, businesses, usage, top-ups, prices).
 - Videos: every video is drawn by Remotion on our worker from a Timeline our code builds (storylines per style, scene library, five looks, captions, cards, stickers, transitions, sound effects). The client's own videos are watched for usable moments and used in scenes. See `docs/technical.md` → Videos.
-- Files are in Cloudflare R2; the database is Supabase project `focaedtidoocuixiupxn`; migrations 0001–0032 are applied (0027 Ad library searches, 0028 "Plan my week automatically" off by default and autopilot approve each post, 0029 the website's design language, 0030 several businesses per login, 0031 the open business's login email for the account menu, 0032 credits, the admin panel, and the month's agent spend added up in the database). The first admin login (`admin@prodo.app`) was made before 0032; 0032 made it an admin and removed the empty business the old trigger gave it.
+- Files are in Cloudflare R2. The database is not set up yet: the whole database is `supabase/schema.sql`, run once on a new, empty Supabase project; then make the first admin with `scripts/setup/admin.ts`. Nothing (Supabase, R2, Inngest, vendors) is connected yet; every setting goes in `.env.local`.
 - Not yet: a real end-to-end weekly run with paid calls, the publisher tested end to end, the worker update deployed to the VPS, email sending (`EMAIL_ENABLED` off), a custom domain for files (still `r2.dev`).
 
 ### Decisions worth knowing
 
-- **Multi-tenant**: one deploy (Vercel + Supabase + Inngest) for every business, every row tagged with `business_id`. Each business has its own login; a login can add others and switch (`business_members`, 0030).
+- **Multi-tenant**: one deploy (Vercel + Supabase + Inngest) for every business, every row tagged with `business_id`. Each business has its own login; a login can add others and switch (`business_members`).
 - **ScrapeCreators instead of SerpAPI** for search, ad libraries and public social data (no Google Trends or Maps reviews).
 - **This week (`/week`) is home**; there is no Dashboard tab.
 - **Credits, not dollars, for clients**: 1 credit = $0.10, packs in `config/credits.ts`, prices per action in `credit_prices` (admin panel → Prices). No payments in the app: an admin adds credits after the client pays. Every change is a `credit_ledger` row written only by the `credit_*` database functions. See `docs/technical.md` → Credits.
 - **Admin panel** (`/admin`): logins in `public.admins` (made with `scripts/setup/admin.ts`), no business; 404 for everyone else (middleware, layout and `adminHandler`). It makes client logins, adds credits, and shows usage, top-ups and our AI cost.
 - **Email** notifications are built (Resend) but only logged until `EMAIL_ENABLED=1`.
-- **Files in Cloudflare R2** (bucket `prodo-media`, S3 API signed with `aws4fetch`), not Supabase Storage. Public links come from `NEXT_PUBLIC_MEDIA_URL`. The bucket's CORS and auto-delete rules are set by `npm run smoke scripts/setup/r2-bucket.ts [origin…]`.
+- **Files in Cloudflare R2** (bucket `brandwright-media`, S3 API signed with `aws4fetch`), not Supabase Storage. Public links come from `NEXT_PUBLIC_MEDIA_URL`. The bucket's CORS and auto-delete rules are set by `npm run smoke scripts/setup/r2-bucket.ts [origin…]`.
 - **The video worker** (`worker/`) runs on a Hostinger VPS with Docker + Caddy. Videos need it (`FFMPEG_WORKER_URL`, `FFMPEG_WORKER_SECRET`); Upload-Post's FFmpeg API is only a fallback for small ffmpeg jobs.
 
 ## Commands
@@ -133,7 +133,7 @@ All external services go through adapters in `src/providers/`. Never import a ve
 
 ### Agents
 
-Each agent is an Inngest function, one step per outside call, and logs every step (summary, tokens, `cost_usd`, duration) to `agent_runs` through `agentStep(step, id, opts, async (track) => …)` in `src/agents/run.ts`; call `track(result.usage)` after each paid call. Before the step runs, `assertBudget` (`src/agents/budget.ts`) stops it with `PAUSED` or `BUDGET_REACHED` (the monthly AI safety cap, Prodo's own guard).
+Each agent is an Inngest function, one step per outside call, and logs every step (summary, tokens, `cost_usd`, duration) to `agent_runs` through `agentStep(step, id, opts, async (track) => …)` in `src/agents/run.ts`; call `track(result.usage)` after each paid call. Before the step runs, `assertBudget` (`src/agents/budget.ts`) stops it with `PAUSED` or `BUDGET_REACHED` (the monthly AI safety cap, Brandwright's own guard).
 
 **Credits**: anything that costs money takes the business's credits through `core/credits/` (`spendCredits` with a key, so retries never charge twice; `refundCredits` with the same key when the work fails; `assertCredits` / `check.ts` before starting from a screen). A post's production run charges `produce:<item>:<runId>` and its `onFailure` refunds it. Too few credits is `NO_CREDITS` (permanent, account-wide). New paid actions need a `credit_prices` row and a charge point; see `docs/technical.md` → Credits.
 
@@ -143,7 +143,7 @@ Layout: one folder per agent. `index.ts` reads top to bottom as the agent's step
 - **Weekly loop**: 5 Planner → 6 Creative Director → 8 QA Gate 1 → 7 Producer → 8 QA Gate 2 → 9 Publisher → 10 Performance Analyst → learnings feed the Planner. One slot end to end is `src/agents/weekly/produce-item.ts`.
 - **The client's choices** (goals, content mix, styles, people, logo, next step, music) reach every weekly agent through `contentRules()` in `src/core/content/prefs.ts`; what each style means is in `src/core/content/styles.ts`.
 - **Image ads (designed mode; the default is free, see Code vs AI vs vendor)**: the style picked for an ad is the style made, and each style has its own layouts (`IMAGE_STYLE_LAYOUTS`; eight layouts in `creative/templates/ads.tsx`, with a design that varies per ad). Words go on the photo's calm side, prices are written by code, there is no button (nothing in an image is clickable), a product photo gives the product only (never its model), and every fact printed on the image must be backed. See `docs/technical.md` → Image ads.
-- **Creative knowledge base**: `prodo-creative-knowledge.md` is compressed into `src/prompts/knowledge.ts` and every creative agent prompt (Planner, Creative Director, QA gates, Performance Analyst, Brand Strategist) follows its shape: ROLE, KNOWLEDGE, PROCEDURE, OUTPUT, SELF-CHECK. Use its exact vocabulary (`core/creative/brief.ts`: hook types, frameworks, levers, desires, awareness levels, objectives). Facts never come from it, only from the brand's data. See `docs/technical.md` → Creative knowledge base.
+- **Creative knowledge base**: `brandwright-creative-knowledge.md` is compressed into `src/prompts/knowledge.ts` and every creative agent prompt (Planner, Creative Director, QA gates, Performance Analyst, Brand Strategist) follows its shape: ROLE, KNOWLEDGE, PROCEDURE, OUTPUT, SELF-CHECK. Use its exact vocabulary (`core/creative/brief.ts`: hook types, frameworks, levers, desires, awareness levels, objectives). Facts never come from it, only from the brand's data. See `docs/technical.md` → Creative knowledge base.
 
 ### Videos
 
@@ -165,9 +165,9 @@ Read live from the publishing provider (cached 60s in TanStack Query). No `conne
 
 ### Multi-tenant
 
-Each business has its own login (its owner). Creating a login in Supabase Auth creates its business and settings rows (database triggers); the user then goes through onboarding. A login can open several businesses (`business_members`, 0030): "Add account" links one that has its own login (signing in with it once; only set-up businesses) or starts a new one ("Setting up" until its Brand Bible is approved); switching picks one per device and reloads the tab. The list is on the login, so it's the same on every device.
+Each business has its own login (its owner). Creating a login in Supabase Auth creates its business and settings rows (database triggers); the user then goes through onboarding. A login can open several businesses (`business_members`): "Add account" links one that has its own login (signing in with it once; only set-up businesses) or starts a new one ("Setting up" until its Brand Bible is approved); switching picks one per device and reloads the tab. The list is on the login, so it's the same on every device.
 
-- **Which business**: `current_business_id()` reads the `x-prodo-business` header (the tab's business; `apiFetch` sends it on every call) or `x-prodo-pick` (the business picked on this device, from the `prodo_business` cookie, added by `lib/supabase/server.ts`), always checking the login belongs to it. A tab never acts on a business it wasn't loaded with.
+- **Which business**: `current_business_id()` reads the `x-brandwright-business` header (the tab's business; `apiFetch` sends it on every call) or `x-brandwright-pick` (the business picked on this device, from the `brandwright_business` cookie, added by `lib/supabase/server.ts`), always checking the login belongs to it. A tab never acts on a business it wasn't loaded with.
 
 - **API routes**: the logged-in client; RLS (`business_id = current_business_id()`) limits every query, and inserts fill `business_id` by themselves. When the id is needed (events, storage keys) use `currentBusiness()` (`src/core/business.ts`).
 - **Agents and jobs**: `businessDb(businessId)` (`src/lib/supabase/business.ts`), the service role limited to one business: it filters every read, update and delete, stamps every insert and passes `p_business_id` to database functions. Never use `createAdminClient()` for tables; it's only for listing businesses, admin scripts, and linking or removing an account (`core/accounts.ts`, which works across logins).
@@ -183,7 +183,7 @@ Vendor error → adapter translates to `AppError` (type + exact message + retry 
 - **Messages are exact**: who failed, what they were doing, the HTTP status and the vendor's own reason, e.g. `Firecrawl (reading royal-gypsy.com/about) is out of credit (402 Payment Required): "Insufficient credits"`. Never a bare "failed" or "busy".
 - Build them with the helpers: `statusError` / `jsonOrThrow` / `replyError` / `request` (`providers/http.ts`, with a `what` label; each adapter lists its vendor's documented codes in a `KNOWN` table), `vendorDetail`, `cleanReason`, `networkReason` (`core/error-text.ts`). `userMessage(err)` describes anything else (database errors with their code in words, network codes, code bugs). Vendor text always goes through `cleanReason`, which removes keys, tokens and account ids.
 - A failed agent step stores its message on `agent_runs.error`, with `output.retrying` when Inngest tries again; the activity feed shows both.
-- **Only what can change is retried.** `classify(err)` decides for any error: busy services, rate limits, timeouts, dropped connections and deadlocks retry; no credit, caps, wrong keys, no permission, rejected input, database rules, missing migrations and code bugs stop at once. `toInngestError` keeps the type in the message (`[[OUT_OF_CREDIT]] …`) because Inngest passes on only the message; `userMessage` / `failureMessage` strip it. Every `onFailure` saves `failureMessage(error)`.
+- **Only what can change is retried.** `classify(err)` decides for any error: busy services, rate limits, timeouts, dropped connections and deadlocks retry; no credit, caps, wrong keys, no permission, rejected input, database rules, a database behind schema.sql and code bugs stop at once. `toInngestError` keeps the type in the message (`[[OUT_OF_CREDIT]] …`) because Inngest passes on only the message; `userMessage` / `failureMessage` strip it. Every `onFailure` saves `failureMessage(error)`.
 
 Starting a job can fail too: `inngest.send` (`src/jobs/client.ts`) turns any failed send into an exact `AppError` (which run, the address and why: `Inngest (starting the post's agents) couldn't be reached at http://localhost:8288: the server refused the connection (ECONNREFUSED)…`), and `restartItem()`, `startGenerating()` and Create an ad (`/api/ads`) mark the row failed with that message instead of leaving it "planned" or "generating". `apiHandler` answers any other unexpected error with `userMessage(err)`, never the raw text ("fetch failed").
 
@@ -198,14 +198,12 @@ Kie returns HTTP 200 even on failure. Check the `code` field in the response bod
 ## Supabase
 
 ```bash
-npx supabase link --project-ref focaedtidoocuixiupxn
-npx supabase db push --linked
-npx supabase gen types typescript --project-id focaedtidoocuixiupxn --schema public > src/types/database.ts
+npx supabase gen types typescript --project-id <project-ref> --schema public > src/types/database.ts
 ```
 
-Never append `2>&1` to the types command — stderr noise breaks the generated file. In PowerShell, `>` writes UTF-16, which breaks lint and the build; use `npx supabase gen types typescript --project-id focaedtidoocuixiupxn --schema public | Out-File -Encoding utf8 src/types/database.ts`.
+Never append `2>&1` to the types command — stderr noise breaks the generated file. In PowerShell, `>` writes UTF-16, which breaks lint and the build; use `npx supabase gen types typescript --project-id <project-ref> --schema public | Out-File -Encoding utf8 src/types/database.ts`.
 
-**Migrations**: never edit an applied migration; always add a new one, and list it in `docs/database.md`. Migrations 0001–0032 were applied by pasting them into the Supabase SQL Editor, so the CLI's history doesn't know them. Before the first `db push`, run `npx supabase migration repair --status applied 0001 0002 0003 0004 0005 0006 0007 0008 0009 0010 0011 0012 0013 0014 0015 0016 0017 0018 0019 0020 0021 0022 0023 0024 0025 0026 0027 0028 0029 0030 0031 0032`.
+**Database changes: one file.** `supabase/schema.sql` is the whole database, always current, and runs on an empty project (paste it into the SQL Editor). There are no migration files. For a change: edit the table or function where it lives in `schema.sql`; on a database that already exists, run just that change (`alter table …`, `create or replace function …`) in the SQL Editor once; update `docs/database.md`; regenerate `src/types/database.ts`. Keep constraint names as they are: API embeds name foreign keys (e.g. `plan_items!posts_plan_item_id_fkey`).
 
 ### Schema rules
 
@@ -213,7 +211,7 @@ Never append `2>&1` to the types command — stderr noise breaks the generated f
 - Products and services are one table, `offerings`, with `kind`. Type-specific details go in `attributes`.
 - Brand rows (`offerings`, `personas`, `content_pillars`, `offers`) are archived with `active = false`, never hard-deleted.
 - `brand_bible` is versioned; only one row per business can be `approved` (partial unique index).
-- pgvector: `brand_chunks.embedding` and `hook_library.embedding` are `vector(1536)` (`text-embedding-3-small`). Changing the model means a migration + re-embedding. Search through `match_brand_chunks()` and `match_recent_hooks()` (exact search within one business).
+- pgvector: `brand_chunks.embedding` and `hook_library.embedding` are `vector(1536)` (`text-embedding-3-small`). Changing the model means changing both columns in `schema.sql` + re-embedding. Search through `match_brand_chunks()` and `match_recent_hooks()` (exact search within one business).
 - Access: RLS on every table (`own_business`: `authenticated` sees only its own business), no `anon` grants. Agents and jobs use `businessDb(businessId)`.
 
 ### Client conventions

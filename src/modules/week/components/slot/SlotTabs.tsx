@@ -43,7 +43,7 @@ export function WhyTab({ item }: { item: PlanItemView }) {
       {item.offer && <Row title="Offer">{item.offer.title}</Row>}
       {item.is_experiment && (
         <div className="flex items-center gap-2 text-[13px] text-ob-muted">
-          <FlaskConical size={15} className="text-ob-primary" /> An experiment: Prodo is testing something new to learn what works for you.
+          <FlaskConical size={15} className="text-ob-primary" /> An experiment: Brandwright is testing something new to learn what works for you.
         </div>
       )}
     </div>

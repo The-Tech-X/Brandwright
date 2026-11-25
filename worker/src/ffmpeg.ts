@@ -1,5 +1,5 @@
 // ffmpeg jobs: the small video tasks (loudness, trimming, converting, thumbnails) and, until the
-// Remotion templates replace it, joining clips into a video. Prodo sends the argument list.
+// Remotion templates replace it, joining clips into a video. Brandwright sends the argument list.
 
 import { spawn } from "node:child_process";
 import { extname, join } from "node:path";

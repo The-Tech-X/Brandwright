@@ -1,6 +1,6 @@
 import { AWARENESS_LEVELS, CAMERA_MOVES, DESIRES, FRAMEWORKS, HOOK_TYPES, LEVERS, STATIC_FRAMEWORKS, STYLE_MODIFIERS } from "@/core/creative/brief";
 
-// The creative knowledge base (prodo-creative-knowledge.md), compressed into rules and tables for
+// The creative knowledge base (brandwright-creative-knowledge.md), compressed into rules and tables for
 // the agent prompts. Each agent prompt takes only the blocks its job needs (knowledge base §0.3).
 // Facts never come from here: every example is a pattern, and proof, prices, numbers and names come
 // only from the brand's own data.

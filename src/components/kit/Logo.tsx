@@ -1,14 +1,14 @@
 import { cn } from "@/lib/utils";
 
-// The Prodo mark: a clean geometric P in white on a near-black tile, with one coral dot.
+// The Brandwright mark: a clean geometric B in white on a near-black tile, with one coral dot.
 // Geometry and colours live here once; src/app/icon.svg and apple-icon.tsx repeat them.
 
 /** Shapes and colours on a 32×32 grid, shared by every version of the mark. */
 export const MARK = {
-  /** The P as one stroke: stem, then the bowl back to the stem */
-  p: "M10 25V7h7a6 6 0 0 1 0 12h-7",
+  /** The B as one stroke: stem, the top bowl back to the stem, then the slightly wider bottom bowl */
+  b: "M9 25V7h6a4.5 4.5 0 0 1 0 9H9h7a4.5 4.5 0 0 1 0 9H9Z",
   stroke: 3.5,
-  dot: { cx: 23.5, cy: 23.5, r: 2.25 },
+  dot: { cx: 24, cy: 24, r: 2.25 },
   tile: "#15171c",
   ink: "#ffffff",
   accent: "#ff7a59",
@@ -28,7 +28,7 @@ export function LogoMark({ size = 32, className, title }: { size?: number; class
       aria-hidden={title ? undefined : true}
     >
       <rect width="32" height="32" rx="8" fill={MARK.tile} />
-      <path d={MARK.p} fill="none" stroke={MARK.ink} strokeWidth={MARK.stroke} strokeLinejoin="round" />
+      <path d={MARK.b} fill="none" stroke={MARK.ink} strokeWidth={MARK.stroke} strokeLinejoin="round" />
       <circle {...MARK.dot} fill={MARK.accent} />
     </svg>
   );
@@ -37,7 +37,7 @@ export function LogoMark({ size = 32, className, title }: { size?: number; class
 const WORD_SIZE = { sm: "text-base", md: "text-lg", lg: "text-[26px]" } as const;
 const MARK_SIZE = { sm: 24, md: 30, lg: 40 } as const;
 
-/** Mark + "Prodo" wordmark. */
+/** Mark + "Brandwright" wordmark. */
 export function Logo({
   size = "md",
   tone = "default",
@@ -51,7 +51,7 @@ export function Logo({
     <span className={cn("inline-flex items-center gap-2.5 font-ob", className)}>
       <LogoMark size={MARK_SIZE[size]} />
       <span className={cn("font-extrabold leading-none tracking-[-0.03em]", WORD_SIZE[size], tone === "onDark" ? "text-ob-on-dark" : "text-ob-ink")}>
-        Prodo
+        Brandwright
       </span>
     </span>
   );

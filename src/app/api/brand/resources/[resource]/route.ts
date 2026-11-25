@@ -9,7 +9,7 @@ import { inngest } from "@/jobs/client";
 import { assertCredits, spendCredits } from "@/core/credits/ledger";
 import { priceOf } from "@/core/credits/prices";
 
-/** The client's own video (not a reference to copy): Prodo watches it for usable moments, which costs credits */
+/** The client's own video (not a reference to copy): Brandwright watches it for usable moments, which costs credits */
 const isOwnVideo = (asset: { kind?: string; storage_key?: string }) => asset.kind !== "reference_video" && /.(mp4|mov)$/i.test(asset.storage_key ?? "");
 
 async function resourceOf(params: Promise<{ resource: string }>) {

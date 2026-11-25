@@ -71,7 +71,7 @@ export function ContentStep() {
         />
       </Section>
 
-      <Section title="People in your posts" description="Decides which photo and video styles Prodo can make for you.">
+      <Section title="People in your posts" description="Decides which photo and video styles Brandwright can make for you.">
         <Field label="Should people appear in your posts?" path="people">
           <ChoiceCards label="People in your posts" options={PEOPLE_OPTIONS} value={v.people} onChange={(people) => set({ people })} />
         </Field>
@@ -80,7 +80,7 @@ export function ContentStep() {
             label="Photos of these people"
             optional
             path="peoplePhotos"
-            hint="You, your team or customers who agreed to appear. Clear photos of faces and full body. Prodo uses them so the same people appear in your posts."
+            hint="You, your team or customers who agreed to appear. Clear photos of faces and full body. Brandwright uses them so the same people appear in your posts."
           >
             <MediaUploader purpose="photo" max={10} value={v.peoplePhotos} onChange={(peoplePhotos) => set({ peoplePhotos })} />
           </Field>
@@ -107,7 +107,7 @@ export function ContentStep() {
         </Field>
       </Section>
 
-      <Section title="Your own photos and videos" badge={<OptionalBadge />} description="Real shots build trust. Prodo mixes them into your posts alongside what it makes.">
+      <Section title="Your own photos and videos" badge={<OptionalBadge />} description="Real shots build trust. Brandwright mixes them into your posts alongside what it makes.">
         <Field path="ownMedia" hint="Your place, team, products or process. Up to 30.">
           <MediaUploader purpose="media" max={30} value={v.ownMedia} extend={asMedia} onChange={(ownMedia) => set({ ownMedia })} />
         </Field>

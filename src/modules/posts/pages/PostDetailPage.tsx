@@ -74,7 +74,7 @@ export function PostDetailPage() {
       {post.plan_item_id && (
         <Alert tone="info">
           <span className="flex flex-wrap items-center gap-x-2">
-            <Bot size={15} /> Prodo made this post for this week&apos;s plan.
+            <Bot size={15} /> Brandwright made this post for this week&apos;s plan.
             <Link href="/week" className="inline-flex items-center gap-1 font-semibold underline">
               <LayoutGrid size={13} /> Open the plan
             </Link>
@@ -143,7 +143,7 @@ export function PostDetailPage() {
             </Fact>
             {post.publish_at && !isUpcoming(post) && <Fact label="Planned for">{at(post.publish_at)}</Fact>}
             <Fact label="Made">{at(post.created_at)}</Fact>
-            <Fact label="By">{post.origin === "agent" ? "Prodo" : "You"}</Fact>
+            <Fact label="By">{post.origin === "agent" ? "Brandwright" : "You"}</Fact>
             <Fact label="Media">{post.media?.type ?? "—"}</Fact>
           </section>
 

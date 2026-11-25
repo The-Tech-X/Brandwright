@@ -1,6 +1,6 @@
 // Cards and stickers drawn over the picture: a counting number, a review with stars, the price on a
 // burst, the offer, a step number, an emoji sticker and the closing card. All facts come from the
-// Timeline (stored facts in Prodo); nothing here invents text.
+// Timeline (stored facts in Brandwright); nothing here invents text.
 
 import { noise2D } from "@remotion/noise";
 import { makeStar } from "@remotion/shapes";

@@ -72,7 +72,7 @@ export const contentSchema = z.object({
   postsPerWeek: z
     .record(z.enum(POSTING_PLATFORMS), z.number().int().min(0).max(21))
     .refine((v) => Object.values(v).some((n) => n > 0), "Plan at least one post a week"),
-  // Empty = Prodo tries a wide mix and learns what works
+  // Empty = Brandwright tries a wide mix and learns what works
   imageStyles: ranked(IMAGE_STYLES, MAX_STYLES),
   videoStyles: ranked(VIDEO_STYLES, MAX_STYLES),
   people: choice(PEOPLE_CHOICES, "Pick who appears in your posts"),

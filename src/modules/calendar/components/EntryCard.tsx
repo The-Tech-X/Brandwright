@@ -40,7 +40,7 @@ export function EntryCard({ entry, compact = false }: { entry: Entry; compact?: 
           )}
           {entry.kind === "post" && entry.byAgent && (
             <Badge tone="primary" size="sm">
-              <Bot size={11} /> By Prodo
+              <Bot size={11} /> By Brandwright
             </Badge>
           )}
         </span>

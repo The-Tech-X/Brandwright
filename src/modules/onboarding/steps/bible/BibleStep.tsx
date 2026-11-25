@@ -23,7 +23,7 @@ export function BibleStep() {
         <span className="text-[13px] font-bold uppercase tracking-[0.06em] text-ob-primary">Last step</span>
         <h1 className="m-0 text-[32px] font-extrabold leading-tight tracking-tight">Review your Brand Bible</h1>
         <p className="m-0 max-w-[680px] text-base text-ob-muted">
-          This is how Prodo will talk about your brand. Click the small quote icons to see where each statement comes from. Edit anything, confirm what we
+          This is how Brandwright will talk about your brand. Click the small quote icons to see where each statement comes from. Edit anything, confirm what we
           found on your website, then approve.
         </p>
       </div>

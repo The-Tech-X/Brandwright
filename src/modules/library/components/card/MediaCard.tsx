@@ -69,7 +69,7 @@ export function MediaCard({ media, onOpen, onCreatePost, onRetry, retrying, onDe
               {media.plan_item_id && (
                 <Badge tone="primary" size="sm" className="shadow-ob-xs">
                   <Bot size={12} />
-                  Made by Prodo
+                  Made by Brandwright
                 </Badge>
               )}
               {media.variant_of && (

@@ -1,11 +1,11 @@
-# Prodo video worker
+# Brandwright video worker
 
-Makes videos for Prodo on our own server and saves them straight to Prodo's storage (Cloudflare R2). Two kinds of job:
+Makes videos for Brandwright on our own server and saves them straight to Brandwright's storage (Cloudflare R2). Two kinds of job:
 
-- **Render** (Remotion): the `ad` composition draws a Timeline that Prodo builds (scenes, transitions, captions, cards, stickers, music and sound effects) and becomes an MP4. This is how every Prodo video is made.
+- **Render** (Remotion): the `ad` composition draws a Timeline that Brandwright builds (scenes, transitions, captions, cards, stickers, music and sound effects) and becomes an MP4. This is how every Brandwright video is made.
 - **ffmpeg**: small video tasks (loudness, trimming, converting, thumbnails).
 
-Prodo sends a job, checks on it, and reads the file by its storage key.
+Brandwright sends a job, checks on it, and reads the file by its storage key.
 
 ## Folders
 
@@ -17,7 +17,7 @@ Prodo sends a job, checks on it, and reads the file by its storage key.
 | `src/ffmpeg.ts` | ffmpeg jobs |
 | `src/storage.ts` | Downloads inputs from and uploads results to R2; which links are allowed |
 | `src/config.ts` | Settings from `.env` |
-| `remotion/shared/` | The contract with Prodo, data only (the app imports it as `@video/*`): `timeline.ts` (the Timeline type) and `presets.ts` (the five looks) |
+| `remotion/shared/` | The contract with Brandwright, data only (the app imports it as `@video/*`): `timeline.ts` (the Timeline type) and `presets.ts` (the five looks) |
 | `remotion/ad/` | The `ad` composition: `Ad.tsx` (scenes in a TransitionSeries, layers, captions, sound), `Scene.tsx` (clips, stills with camera moves, before/after wipe), `Text.tsx` (kinetic titles, word-by-word captions), `Cards.tsx` (stat counter, review, price burst, offer, step, sticker, closing card), `Finish.tsx` (logo, progress bar, grain, light leaks), `Soundtrack.tsx` (voice, ducked music, sound effects), `transitions.ts`, `layout.ts`, `sample.ts` |
 | `remotion/templates/` | `Check.tsx`, the deploy test (`check-9x16`…) |
 | `scripts/render-local.ts`, `scripts/stills-local.ts` | Render a Timeline JSON (or the sample) to an MP4 or to PNG frames on your own computer |
@@ -40,7 +40,7 @@ All routes except `/health` need the header `x-worker-secret`.
 
 ## How the ad is drawn
 
-Prodo decides everything from data (`src/creative/video/timeline.ts` in the app): scene lengths from the voice, captions from its word timings, text zones from the picture analysis, stickers and prices at the moment their key word is said. The composition only draws:
+Brandwright decides everything from data (`src/creative/video/timeline.ts` in the app): scene lengths from the voice, captions from its word timings, text zones from the picture analysis, stickers and prices at the moment their key word is said. The composition only draws:
 
 - **Scenes** play in a `TransitionSeries` with plain-CSS transitions (fade, slide, wipe, flip, clock wipe, iris, and a push cut for "zoom"), so renders don't need a graphics card. Clips use `<Video>` from `@remotion/media` (trimmed, slowed, or holding their last frame to fill a scene); stills get the camera move the Timeline gives.
 - **Words**: the hook arrives word by word; key words stand out the preset's way (brand box, drawn underline, colour). Captions show 1–3 words with the spoken one lit. Brand fonts load from storage (`@remotion/fonts`).
@@ -66,8 +66,8 @@ Licence: Remotion is free for companies of up to 3 people; above that, automated
 1. VPS with the **Ubuntu 24.04 with Docker** template. KVM 2 (2 vCPU / 8 GB) works; KVM 4 renders faster.
 2. Point a domain at the VPS IP (an `A` record, e.g. `render.yourdomain.com`).
 3. Open ports 22, 80 and 443.
-4. Give the VPS read access to the repo (a GitHub deploy key) and `git clone` it to `/opt/prodo`.
-5. `cd /opt/prodo/worker && cp .env.example .env` and fill it in:
+4. Give the VPS read access to the repo (a GitHub deploy key) and `git clone` it to `/opt/brandwright`.
+5. `cd /opt/brandwright/worker && cp .env.example .env` and fill it in:
 
    | Setting | Value |
    |---|---|
@@ -85,7 +85,7 @@ In the app's env set `FFMPEG_WORKER_URL=https://render.yourdomain.com` and `FFMP
 Update after a code change (whenever `worker/` changes, so the worker runs the same code as the app):
 
 ```bash
-cd /opt/prodo && git pull && cd worker && docker compose up -d --build
+cd /opt/brandwright && git pull && cd worker && docker compose up -d --build
 ```
 
 Do it while no video is rendering (`"render":{"running":0,"queued":0}` on `/health`): a render that is running during the rebuild is lost, and its post fails with "The video renderer lost this job".

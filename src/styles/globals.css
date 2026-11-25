@@ -5,7 +5,7 @@
 @custom-variant dark (&:is(.dark *));
 
 /* ═══════════════════════════════════════════════════════════════════
-   Prodo Design System — Single Source of Truth
+   Brandwright Design System — Single Source of Truth
    All tokens defined here, consumed via Tailwind utilities.
    Never hardcode a color, radius, or shadow value in a component.
    ═══════════════════════════════════════════════════════════════════ */

@@ -7,7 +7,7 @@ import { SessionStoreProvider } from "@/stores/SessionStoreProvider";
 import { OnboardingStoreProvider } from "@/modules/onboarding/store/OnboardingStoreProvider";
 import { OnboardingShell } from "@/modules/onboarding/components/shell/OnboardingShell";
 
-export const metadata = { title: "Set up Prodo" };
+export const metadata = { title: "Set up Brandwright" };
 
 // Loads everything once on the server. Moving between steps makes no extra requests.
 export default async function OnboardingLayout({ children }: { children: ReactNode }) {
