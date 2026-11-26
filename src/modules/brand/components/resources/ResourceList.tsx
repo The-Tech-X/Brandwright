@@ -14,7 +14,8 @@ import type { PendingKind } from "@/core/brand/pending";
 import { cn } from "@/lib/utils";
 import { useDecidePending } from "../../hooks/useBible";
 import { useResource, useResourceMutations } from "../../hooks/useResource";
-import { ResourceForm } from "./ResourceForm";
+import { ResourceForm, type PhotoChange } from "./ResourceForm";
+import { useSaveOfferingPhotos } from "./OfferingPhotos";
 
 const PENDING_KIND: Partial<Record<ResourceKey, PendingKind>> = { offerings: "offering", offers: "offer", proof: "proof" };
 
@@ -63,6 +64,9 @@ export function ResourceList({ resource, emptyIcon, emptyText, layout = "list", 
   const { create, update, remove } = useResourceMutations(resource);
   const decide = useDecidePending();
   const [editing, setEditing] = useState<ResourceRow | "new" | null>(null);
+  const savePhotos = useSaveOfferingPhotos();
+  const [savingPhotos, setSavingPhotos] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const [removing, setRemoving] = useState<ResourceRow | null>(null);
 
   const pendingKind = PENDING_KIND[resource];
@@ -70,9 +74,22 @@ export function ResourceList({ resource, emptyIcon, emptyText, layout = "list", 
   const isArchived = (row: ResourceRow) => def.archive && row.active === false && !isPending(row);
   const pendingCount = rows?.filter(isPending).length ?? 0;
 
-  async function save(values: Record<string, unknown>) {
-    if (editing === "new") await create.mutateAsync(values);
-    else if (editing) await update.mutateAsync({ id: editing.id, values });
+  async function save(values: Record<string, unknown>, photos?: PhotoChange) {
+    setPhotoError(null);
+    const row = editing === "new" ? await create.mutateAsync(values) : editing ? await update.mutateAsync({ id: editing.id, values }) : null;
+    if (row && photos) {
+      try {
+        setSavingPhotos(true);
+        await savePhotos(String(row.id), photos.before, photos.after);
+      } catch (err) {
+        // The product is saved; say which part didn't, and keep the form open to try again
+        setPhotoError(`Saved, but the photos weren't: ${err instanceof Error ? err.message : "try again"}`);
+        if (editing === "new") setEditing(row);
+        return;
+      } finally {
+        setSavingPhotos(false);
+      }
+    }
     setEditing(null);
   }
 
@@ -197,9 +214,12 @@ export function ResourceList({ resource, emptyIcon, emptyText, layout = "list", 
           key={editing === "new" ? "new" : editing.id}
           resource={resource}
           row={editing === "new" ? null : editing}
-          saving={create.isPending || update.isPending}
-          error={(create.error ?? update.error)?.message}
-          onClose={() => setEditing(null)}
+          saving={create.isPending || update.isPending || savingPhotos}
+          error={photoError ?? (create.error ?? update.error)?.message}
+          onClose={() => {
+            setEditing(null);
+            setPhotoError(null);
+          }}
           onSave={save}
         />
       )}

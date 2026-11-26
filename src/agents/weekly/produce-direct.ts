@@ -15,6 +15,8 @@ import type { PlanItem } from "@/core/plans/types";
 import { request } from "@/providers/http";
 import { finalName, mediaKey, publicUrl, ratioName, workKey } from "@/providers/storage/paths";
 import { upload } from "@/providers/storage/r2";
+import { placeLogo, type LogoFiles } from "@/creative/logo-overlay";
+import { LIMITS } from "@/config/limits";
 import { logUsage, taskFor } from "./task";
 import { PASS_SCORE } from "@/agents/qa-critic/gate1";
 import { MODELS } from "@/config/models";
@@ -23,12 +25,13 @@ import type { QaCheck, QaReport } from "@/core/plans/types";
 import { DIRECT_IMAGE_QA_SYSTEM, directImageReviewSchema } from "@/prompts/agents/qa-asset";
 
 // Direct image ad (the mode in config/image-ads.ts): "give the image model everything". No Creative Director
-// and no logo drawn by code. All the context the Creative Director would read goes to the image model as plain
-// text with a short creative brief (concept, golden-ratio composition, the words, the logo), with the product
-// photos and the logo attached. The QA Critic then checks the finished ad with OpenAI vision; below the bar it is
+// All the context the Creative Director would read goes to the image model as plain text with a short creative
+// brief (concept, golden-ratio composition, the words), with the product photos attached. The model never sees or
+// draws the logo: it keeps the top corners clear and our code places the real logo file there (logo-overlay.ts),
+// on every size. The QA Critic then checks the finished ad with OpenAI vision; below the bar it is
 // made once more with the critic's fix. Its picture is the final ad (only resized to each platform's size).
 
-/** Photos sent with the request, besides the logo */
+/** Photos sent with the request */
 const MAX_PHOTOS = 4;
 
 export async function produceDirect(
@@ -47,8 +50,8 @@ export async function produceDirect(
       const { ctx, usage } = await loadCreativeContext(db(), itemId);
       if (usage) track(usage);
       const theme = await loadTheme(db());
-      // The logo only when the owner wants it on their posts (Settings → Content)
-      const logo = ctx.rules.showLogo ? (theme.logo.onLight ?? theme.logo.onDark) : null;
+      // The logo only when the owner wants it on their posts (Settings → Content); our code places it, not the model
+      const logos = ctx.rules.showLogo && (theme.logo.onLight || theme.logo.onDark) ? { light: theme.logo.onLight, dark: theme.logo.onDark } : null;
       // The product's own photos, or for a post about the brand a mix of the brand's and each product's (directPhotos).
       // ctx.assets has no videos, and no people photos when the owner chose none.
       const photos = directPhotos(ctx, MAX_PHOTOS);
@@ -68,12 +71,11 @@ export async function produceDirect(
           url: publicUrl(a.storageKey),
           what: a.kind === "product_photo" && a.offeringName ? `real product photo of "${a.offeringName}"${a.description ? `: ${a.description}` : ""}` : `the business's own ${a.kind.replace("_", " ")} photo${a.description ? `: ${a.description}` : ""}`,
         })),
-        ...(logo ? [{ url: logo, what: "the brand's logo" }] : []),
       ];
       const colours = { primary: theme.primary.bg, accent: theme.accent.bg, heading: theme.fonts.heading, body: theme.fonts.body };
       const brief = directBrief(ctx, photos[0]?.id ?? null);
       await updateItem(db(), itemId, { brief, captions: brief.captions, hook_type: brief.hook.type, hook_text: brief.hook.text, framework: brief.framework, levers: [], status: "briefed", error: null });
-      return { prompt: directPrompt(directContext(ctx, colours, images), !!logo), refs: images.map((i) => i.url), labels: images.map((i) => i.what), brief, imageCount: images.length };
+      return { prompt: directPrompt(directContext(ctx, colours, images), !!logos), logos, refs: images.map((i) => i.url), labels: images.map((i) => i.what), brief, imageCount: images.length };
     },
     (r) => `Gathered the business context and ${r.imageCount} image${r.imageCount === 1 ? "" : "s"} for the image model (no brief written by AI)`
   );
@@ -132,6 +134,17 @@ export async function produceDirect(
     return producer(`direct-keep${sfx}`, () => keepPhoto(db(), businessId, mediaId, done[0].url!, `direct${sfx}`), () => "Saved the ad");
   };
 
+  // The ad at one size, with the real logo placed by our code (each size gets its own placement, so a crop never cuts it)
+  let logoFiles: LogoFiles | null = null;
+  const finished = async (adUrl: string, canvas: { width: number; height: number }): Promise<Buffer> => {
+    const res = await request("File storage", adUrl, {}, 30_000);
+    if (!res.ok) throw new NonRetriableError("Couldn't read the saved ad. Try again.");
+    const sized = await sharp(Buffer.from(await res.arrayBuffer())).resize(canvas.width, canvas.height, { fit: "cover" }).png().toBuffer();
+    if (!prepared.logos) return sized;
+    logoFiles ??= { light: await logoFile(prepared.logos.light), dark: await logoFile(prepared.logos.dark) };
+    return placeLogo(sized, logoFiles);
+  };
+
   // 3. The QA Critic looks at the finished ad: creativity, golden-ratio composition, the product, the logo, the words, the facts
   const qa = taskFor(step, "qa_critic", { businessId, planId, itemId, mediaId });
   const review = (round: number, adUrl: string) =>
@@ -144,11 +157,14 @@ export async function produceDirect(
           "",
           "IMAGES, IN ORDER:",
           ...prepared.labels.map((what, i) => `Image ${i + 1}: ${what}`),
-          `Image ${prepared.labels.length + 1} (last): the finished ad to judge`,
+          `Image ${prepared.labels.length + 1} (last): the finished ad to judge${prepared.logos ? " (the brand's logo in a top corner was placed there by our code, from the real logo file)" : ""}`,
         ].join("\n");
+        // The critic sees the ad as it will post: the first size, with our logo on it
+        const previewKey = workKey(businessId, mediaId, `qa-${round + 1}.png`);
+        await upload(previewKey, await finished(adUrl, canvases[0]), "image/png");
         let r;
         try {
-          const res = await ai.structured(directImageReviewSchema, message, { system: DIRECT_IMAGE_QA_SYSTEM, images: [...prepared.refs, adUrl], model: MODELS.critic });
+          const res = await ai.structured(directImageReviewSchema, message, { system: DIRECT_IMAGE_QA_SYSTEM, images: [...prepared.refs, publicUrl(previewKey)], model: MODELS.critic });
           track(res.usage);
           r = res.data;
         } catch (err) {
@@ -186,16 +202,13 @@ export async function produceDirect(
     checked = await review(1, photoUrl);
   }
 
-  // 4. The model's picture is the final ad; only cropped to each platform's size
+  // 4. The model's picture is the final ad: cropped to each platform's size, with the real logo placed on each
   await producer(
     "direct-sizes",
     async () => {
-      const res = await request("File storage", photoUrl, {}, 30_000);
-      if (!res.ok) throw new NonRetriableError("Couldn't read the saved ad. Try again.");
-      const source = Buffer.from(await res.arrayBuffer());
       let mainKey = "";
       for (const [i, canvas] of canvases.entries()) {
-        const png = await sharp(source).resize(canvas.width, canvas.height, { fit: "cover" }).png().toBuffer();
+        const png = await finished(photoUrl, canvas);
         const key = mediaKey(businessId, mediaId, finalName(ratioName(canvas.ratio), 0, "png"));
         if (i === 0) {
           await upload(key, png, "image/png");
@@ -205,7 +218,7 @@ export async function produceDirect(
       await markMediaReady(db(), mediaId, mainKey);
       return mainKey;
     },
-    () => `Fitted the ad to ${canvases.map((c) => c.ratio).join(", ")}`
+    () => `Fitted the ad to ${canvases.map((c) => c.ratio).join(", ")}${prepared.logos ? ", with the logo placed by our code" : ""}`
   );
 
   await step.run("sync-cost", () => syncCost(db(), mediaId));
@@ -216,4 +229,12 @@ export async function produceDirect(
   else await settle("needs_review", { reason: `Still below the bar after one remake (${checked.score}/10): ${checked.failed.join(", ") || "below 7"}. ${checked.fix}`.trim() });
   await step.sendEvent("settled", { name: "plan-item/settled", data: { businessId, itemId, planId, oneOff } });
   return { status };
+}
+
+/** A logo version from storage, or null when there isn't one */
+async function logoFile(url: string | null): Promise<Buffer | null> {
+  if (!url) return null;
+  const res = await request("File storage (the logo)", url, {}, LIMITS.downloadTimeoutMs);
+  if (!res.ok) throw new AppError(`Couldn't read the brand's logo to place it on the ad (status ${res.status}).`, "PROVIDER_DOWN", true);
+  return Buffer.from(await res.arrayBuffer());
 }

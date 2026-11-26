@@ -152,8 +152,9 @@ export function directContext(ctx: CreativeContext, colours: DirectColours | nul
 
 /**
  * What goes to the image model: the request and a short creative brief (concept, golden-ratio composition, the
- * words, the logo), then everything above. Left to itself the model made plain product photos with no words and
- * no logo. The logo is attached, and asked for, only when the owner wants it.
+ * words), then everything above. Left to itself the model made plain product photos with no words. The model never
+ * draws the logo (it redraws it badly, in a painted box): it keeps the top corners clear and our code places the
+ * real logo file there (creative/logo-overlay.ts) when the owner shows it.
  */
 export const directRequest = (logo: boolean) =>
   [
@@ -165,7 +166,7 @@ export const directRequest = (logo: boolean) =>
     "- Composition: golden ratio. The main subject sits on a golden-ratio line or point (about 0.618 of the width or height, not dead centre unless the concept needs symmetry); the words sit in the calm, open part of the picture, balanced against the subject; nothing important touches the edges.",
     "- Words: a short headline (3–8 words) that carries the angle, and at most one short supporting line (the offer, the price as given, or the next step). Write them in the business's language, spelled exactly, large, crisp and easy to read against what is behind them, in a typeface that suits the brand. Only facts from the details: no invented prices, discounts, ratings, reviews or claims. No buttons, links, web addresses, phone numbers or hashtags, and none of the labels below (Angle, Objective, Desire…); nothing else is written anywhere.",
     logo
-      ? "- Logo: place the attached logo once, small, in a corner clear of the words and the subject, exactly as it is (the same shape, colours and letters, never redrawn)."
+      ? "- Logo: don't draw any logo, signature or brand mark. Keep the top-left and top-right corners calm and free of words and the main subject: the brand's real logo is added in one of them afterwards."
       : "- Logo: no logo goes on this ad. Don't draw one or invent a brand mark.",
     "- Colours: the brand's colours (BRAND LOOK) where they fit. Colour codes are values, never text to write.",
     "- An ad the owner likes (when ATTACHED IMAGES has one): make this ad the same way, with its layout, composition, camera angle, styling, type and mood. It comes before the concept and composition lines above; the product, the words, the facts and the logo are still this business's, never the other brand's.",

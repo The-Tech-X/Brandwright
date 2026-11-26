@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { DatePicker } from "@/components/kit/DatePicker";
 import { Field } from "@/components/kit/Field";
+import { MediaUploader } from "@/components/kit/MediaUploader";
 import { Modal } from "@/components/kit/Modal";
 import { NumberInput, TextArea, TextInput } from "@/components/kit/inputs";
 import { Select } from "@/components/kit/Select";
@@ -11,9 +12,17 @@ import { TagInput } from "@/components/kit/TagInput";
 import { Switch } from "@/components/kit/controls";
 import { button } from "@/components/kit/styles";
 import { RESOURCES, resourceSchema, type FieldDef, type ResourceKey, type ResourceRow } from "@/core/brand/resources";
+import type { Upload } from "@/core/onboarding/schemas";
 import { useResource } from "../../hooks/useResource";
+import { useOfferingPhotos } from "./OfferingPhotos";
 
 type Values = Record<string, unknown>;
+
+/** A product's photos as they were and as the form leaves them (offerings only) */
+export interface PhotoChange {
+  before: Upload[];
+  after: Upload[];
+}
 
 /** "Nothing picked" for optional dropdowns (an empty string would show as no selection). */
 const NONE = "__none";
@@ -71,7 +80,7 @@ interface ResourceFormProps {
   saving: boolean;
   error?: string | null;
   onClose: () => void;
-  onSave: (values: Values) => void;
+  onSave: (values: Values, photos?: PhotoChange) => void;
 }
 
 /** Add or edit one row, with the fields from its definition. Checked with the same schema as the API. */
@@ -80,6 +89,11 @@ export function ResourceForm({ resource, row, saving, error, onClose, onSave }: 
   const fields: FieldDef[] = def.fields;
   const [values, setValues] = useState<Values>(() => initialValues(fields, row));
   const [errors, setErrors] = useState<Record<string, string>>({});
+  // Products and services get their own photos here, linked to them when saved
+  const withPhotos = resource === "offerings";
+  const { linked, loading: photosLoading } = useOfferingPhotos(withPhotos && row ? String(row.id) : null);
+  const [photos, setPhotos] = useState<Upload[] | null>(null);
+  const shownPhotos = photos ?? linked;
 
   function submit() {
     const parsed = resourceSchema(resource, row ? "update" : "create").safeParse(values);
@@ -88,7 +102,7 @@ export function ResourceForm({ resource, row, saving, error, onClose, onSave }: 
       return;
     }
     setErrors({});
-    onSave(values);
+    onSave(values, withPhotos ? { before: linked, after: shownPhotos } : undefined);
   }
 
   return (
@@ -103,7 +117,7 @@ export function ResourceForm({ resource, row, saving, error, onClose, onSave }: 
           <button type="button" className={button({ variant: "secondary" })} onClick={onClose} disabled={saving}>
             Cancel
           </button>
-          <button type="button" className={button()} onClick={submit} disabled={saving}>
+          <button type="button" className={button()} onClick={submit} disabled={saving || photosLoading}>
             {saving && <Loader2 size={16} className="animate-spin" />}
             Save
           </button>
@@ -125,6 +139,16 @@ export function ResourceForm({ resource, row, saving, error, onClose, onSave }: 
             <FieldInput field={field} value={values[field.key]} onChange={(v) => setValues((prev) => ({ ...prev, [field.key]: v }))} />
           </Field>
         ))}
+        {withPhotos && (
+          <Field
+            label="Photos"
+            optional
+            className="sm:col-span-2"
+            hint="Clear photos of this product or your work. Posts about it use them, so it looks like itself. Removing one here keeps it in Photos and videos."
+          >
+            <MediaUploader purpose="photo" max={12} value={shownPhotos} onChange={setPhotos} />
+          </Field>
+        )}
       </div>
     </Modal>
   );

@@ -605,10 +605,10 @@ await check("direct image ad: everything the director reads goes to the image mo
   // No instructions about how the picture is made, no labels to cite, no layouts
   assert.ok(!/cite the label|LAYOUTS|\[O1\]|headline|layout/i.test(text), text);
   const prompt = directPrompt(text + '\nContent pillar: One piece (sources: ["A2", "O1"]) (more)', true);
-  assert.ok(prompt.startsWith("Create one new, scroll-stopping ad image") && prompt.includes("place the attached logo once") && prompt.includes("golden ratio") && prompt.includes("short headline") && prompt.includes("An ad the owner likes"));
+  assert.ok(prompt.startsWith("Create one new, scroll-stopping ad image") && prompt.includes("the brand's real logo is added") && prompt.includes("golden ratio") && prompt.includes("short headline") && prompt.includes("An ad the owner likes"));
   assert.ok(!prompt.includes("sources:") && prompt.includes("Content pillar: One piece (more)"), "research labels are stripped");
   // The owner chose no logo: none is attached, and the model is told not to draw one
-  assert.ok(directPrompt("x", false).includes("no logo goes on this ad") && !directPrompt("x", false).includes("place the attached logo"));
+  assert.ok(directPrompt("x", false).includes("no logo goes on this ad") && !directPrompt("x", false).includes("real logo is added"));
   assert.ok(directPrompt("x".repeat(20000), true).length < 12100);
   assert.deepEqual(["1:1", "4:5", "9:16", "16:9"].map(gpt2Resolution), ["2K", "1K", "2K", "2K"]); // Kie's GPT Image 2 has 4:5 only at 1K
   assert.deepEqual(["1:1", "4:5", "9:16", "16:9"].map(openaiImageSize), ["1024x1024", "1088x1360", "1088x1936", "1936x1088"]);

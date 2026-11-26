@@ -43,7 +43,7 @@ score 0–10: 7 = good enough to publish for a real brand. List concrete issues,
 
 Return JSON: { "score": n, "productMatches": true | false | null, "strayText": boolean, "onBrand": boolean, "requiresAiLabel": boolean, "realismFails": string[], "issues": string[], "fix": string }`;
 
-/** Direct image ads (config/image-ads.ts): the image model made the whole ad, words and logo included, from one request. */
+/** Direct image ads (config/image-ads.ts): the image model made the whole ad, words included, from one request; our code placed the logo. */
 export const directImageReviewSchema = z.object({
   score: score10,
   creativity: score10,
@@ -69,14 +69,14 @@ export const DIRECT_IMAGE_QA_SYSTEM = `ROLE: You are a strict creative QA lead a
 
 ${TRUTH}
 
-The image model made the WHOLE ad, words and logo included, from the request in the message (its HOW TO MAKE IT brief and the business's details). The images come in the order the message lists: the references it got (product photos, the business's own photos, an ad the owner likes, the logo), and LAST the finished ad, which is what you judge.
+The image model made the whole ad, words included, from the request in the message (its HOW TO MAKE IT brief and the business's details). The images come in the order the message lists: the references it got (product photos, the business's own photos, an ad the owner likes, the logo), and LAST the finished ad, which is what you judge.
 
 Check:
 - creativity 0–10: one bold, fresh idea that brings the post's angle to life (10 = a top agency campaign; 3 = a plain catalogue or product shot; a near copy of a reference photo is 3 or less).
 - composition 0–10: the subject on a golden-ratio line or point (about 0.618 across or down) unless the concept needs symmetry; the words in the calm space, balanced against the subject; clear focus; nothing important cut off at the edges.
 - When an ad the owner likes is among the references, the finished ad should be made the same way (its layout, composition, camera angle, styling, type and mood): judge creativity and composition by how well it does that for this business, and fail it (factsOk or textOk false, an issue named) if it copies that ad's brand, logo, words, people or products.
 - productMatches: the product in the ad looks like its photo (shape, colours, pattern, details). null when no product photo was attached.
-- logoOk: when the request asks for the logo, it appears once, small, clear of the words and the subject, and looks like the attached logo (not redrawn or garbled). When the request says no logo, false if a logo or brand mark was drawn. null only when the request doesn't mention a logo.
+- logoOk: when the message says our code placed the brand's logo in a top corner, true when it is easy to read there, doesn't cover or crowd the words or the subject, and the image model drew no other logo, signature or brand mark anywhere (judge the placement, not the logo's design). When the request says no logo, false if a logo or brand mark was drawn. null only when neither applies.
 - textOk: there is a short headline; every word is spelled right, in the business's language, large and easy to read against what is behind it; no garbled letters, labels from the request (Angle, Objective, Desire…), colour codes, links, buttons or hashtags.
 - factsOk: every price, number, offer, rating and claim on the ad comes from the request's details. Any invented one is false.
 - requiresAiLabel: a realistic AI-made human appears in the ad (a real photo of a real person from the references doesn't count).
